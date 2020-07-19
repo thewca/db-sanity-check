@@ -5,7 +5,6 @@ import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
-import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -35,21 +34,18 @@ public class BatchConfiguration {
 	public Job downloadDatabaseExport() {
 		log.info("Job to handle database export");
 
-		// TODO set step1 back again
-//		return jobBuilderFactory.get("handleDatabaseExport").incrementer(new RunIdIncrementer()).start(step1())
-//				.next(step2()).build();
-
-		return jobBuilderFactory.get("handleDatabaseExport").incrementer(new RunIdIncrementer()).start(step2()).build();
-
+		// Daily DailyJobTimestamper makes this executes at most once a day
+		return jobBuilderFactory.get("handleDatabaseExport").incrementer(new DailyJobTimestamper()).start(downloadExport())
+				.next(executeSql()).build();
 	}
 
 	@Bean
-	public Step step1() {
+	public Step downloadExport() {
 		return stepBuilderFactory.get("downloadExport").tasklet(databaseExportDownloadTasklet).build();
 	}
 
 	@Bean
-	public Step step2() {
+	public Step executeSql() {
 		return stepBuilderFactory.get("executeSql").tasklet(executeDownloadedSqlTasklet).build();
 	}
 }
