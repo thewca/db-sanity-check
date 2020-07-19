@@ -5,15 +5,14 @@ import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.worldcubeassociation.databasesanitycheck.tasklet.DatabaseExportDownloadTasklet;
 import org.worldcubeassociation.databasesanitycheck.tasklet.ExecuteDownloadedSqlTasklet;
+import org.worldcubeassociation.databasesanitycheck.tasklet.WrtSanityCheckTasklet;
 
-import lombok.extern.slf4j.Slf4j;
-
-@Slf4j
 @Configuration
 @EnableBatchProcessing
 public class BatchConfiguration {
@@ -30,13 +29,22 @@ public class BatchConfiguration {
 	@Autowired
 	private ExecuteDownloadedSqlTasklet executeDownloadedSqlTasklet;
 
+	@Autowired
+	private WrtSanityCheckTasklet wrtSanityCheckTasklet;
+
 	@Bean
 	public Job downloadDatabaseExport() {
-		log.info("Job to handle database export");
 
 		// Daily DailyJobTimestamper makes this executes at most once a day
-		return jobBuilderFactory.get("handleDatabaseExport").incrementer(new DailyJobTimestamper()).start(downloadExport())
-				.next(executeSql()).build();
+
+		// TODO
+		// return jobBuilderFactory.get("handleDatabaseExport").incrementer(new
+		// DailyJobTimestamper()).start(downloadExport())
+		// .next(executeSql()).next(wrtSanityCheck()).build();
+
+		return jobBuilderFactory.get("handleDatabaseExport").incrementer(new RunIdIncrementer())
+				.start(wrtSanityCheck()).build();
+
 	}
 
 	@Bean
@@ -48,4 +56,10 @@ public class BatchConfiguration {
 	public Step executeSql() {
 		return stepBuilderFactory.get("executeSql").tasklet(executeDownloadedSqlTasklet).build();
 	}
+
+	@Bean
+	public Step wrtSanityCheck() {
+		return stepBuilderFactory.get("wrtSanityCheck").tasklet(wrtSanityCheckTasklet).build();
+	}
+
 }
