@@ -10,7 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.worldcubeassociation.databasesanitycheck.tasklet.DatabaseExportDownloadTasklet;
-import org.worldcubeassociation.databasesanitycheck.tasklet.DatabaseExportExtractTasklet;
+import org.worldcubeassociation.databasesanitycheck.tasklet.ExecuteDownloadedSqlTasklet;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -29,13 +29,18 @@ public class BatchConfiguration {
 	private DatabaseExportDownloadTasklet databaseExportDownloadTasklet;
 
 	@Autowired
-	private DatabaseExportExtractTasklet databaseExportExtractTasklet;
+	private ExecuteDownloadedSqlTasklet executeDownloadedSqlTasklet;
 
 	@Bean
 	public Job downloadDatabaseExport() {
 		log.info("Job to handle database export");
-		return jobBuilderFactory.get("handleDatabaseExport").incrementer(new RunIdIncrementer()).start(step1())
-				.next(step2()).build();
+
+		// TODO set step1 back again
+//		return jobBuilderFactory.get("handleDatabaseExport").incrementer(new RunIdIncrementer()).start(step1())
+//				.next(step2()).build();
+
+		return jobBuilderFactory.get("handleDatabaseExport").incrementer(new RunIdIncrementer()).start(step2()).build();
+
 	}
 
 	@Bean
@@ -45,7 +50,6 @@ public class BatchConfiguration {
 
 	@Bean
 	public Step step2() {
-		return stepBuilderFactory.get("extractExport").tasklet(databaseExportExtractTasklet).build();
+		return stepBuilderFactory.get("executeSql").tasklet(executeDownloadedSqlTasklet).build();
 	}
-
 }

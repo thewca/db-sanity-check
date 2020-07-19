@@ -21,16 +21,19 @@ public class WcaApi {
 	@Value("${api.wca.export.path}")
 	private String exportPath;
 
-	@Value("${api.wca.export.filename}")
-	private String filename;
+	@Value("${wca.export.local.path}")
+	private String localExportPath;
+
+	@Value("${wca.export.local.filename}")
+	private String localExportFilename;
 
 	public void getDatabaseExport() throws IOException, URISyntaxException {
-		log.info("Get database export");
-
 		URL url = new URL(baseUrl + exportPath);
 		log.info("url: " + url.toURI());
 
-		File file = new File(filename);
+		File file = new File(localExportPath + localExportFilename);
+		
+		// Saving the file in an -api- file is not pretty, but it's ok for now.
 		FileUtils.copyURLToFile(url, file);
 		log.info("Saved to " + file.getAbsolutePath());
 	}

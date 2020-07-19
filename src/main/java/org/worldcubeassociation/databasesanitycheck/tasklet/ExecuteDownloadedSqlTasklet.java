@@ -10,11 +10,12 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
-public class DatabaseExportExtractTasklet implements Tasklet {
+public class ExecuteDownloadedSqlTasklet implements Tasklet {
 
 	@Override
 	public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext) {
-		log.info("Extract the export");
+		log.info("Execute downloaded SQL");
+
 		return RepeatStatus.FINISHED;
 	}
 
