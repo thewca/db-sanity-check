@@ -49,7 +49,7 @@ public class WrtSanityCheckTasklet implements Tasklet {
 	public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext)
 			throws DataAccessException, IOException, SQLException {
 
-		incorrectDOB();
+		/*incorrectDOB();
 
 		missingDOBAtScale();
 
@@ -64,10 +64,25 @@ public class WrtSanityCheckTasklet implements Tasklet {
 
 		emptyGender();
 
-		// TODO takes long in developing // inconsistentWcaId();
+		// TODO takes long in developing
+		// inconsistentWcaId();
 
-		personsTableEntriesEithoutResultsTableEntry();
+		personsTableEntriesWithoutResultsTableEntry();
+		resultsTableEntriesWithoutPersonsTableEntry();
+		// TODO Running script 2b (""Check existing people"")
 
+		// TODO "1. Running the ""ranks"" part of script 2a (""Check results"") for all
+		// competitions*/
+
+		// Irregular results
+		emptyFirstSolve();
+		wrongNumberOfResultsForNonCombinedRounds();
+		moreThanTwoDifferentNumbersOfResultsForCombinedRounds();
+		badlyAppliedCuttofs();
+		onlyDnsOrZeroResults();
+		nonZeroAverageForRowsWithLessThanEquals2Attempt();
+
+		// Show results with a warn
 		for (String key : map.keySet()) {
 			log.warn("Inconsistency at " + key);
 			for (String result : map.get(key)) {
@@ -195,9 +210,68 @@ public class WrtSanityCheckTasklet implements Tasklet {
 		generalAnalysis(topic, query);
 	}
 
-	private void personsTableEntriesEithoutResultsTableEntry() {
+	private void personsTableEntriesWithoutResultsTableEntry() {
 		String topic = "Persons table entries without Results table entry";
 		String query = "SELECT * FROM Persons WHERE id NOT IN (SELECT personId FROM Results)";
+		generalAnalysis(topic, query);
+	}
+
+	private void resultsTableEntriesWithoutPersonsTableEntry() {
+		String topic = "Results table entries without Persons table entry";
+		String query = "SELECT * FROM Results WHERE personId NOT IN (SELECT id FROM Persons)";
+		generalAnalysis(topic, query);
+	}
+
+	private void emptyFirstSolve() {
+		String topic = "Empty first solve";
+		String query = "SELECT * FROM Results WHERE value1=0";
+		generalAnalysis(topic, query);
+	}
+
+	private void wrongNumberOfResultsForNonCombinedRounds() {
+		String topic = "Wrong number of results for non-combined rounds";
+		String query = "SELECT * FROM Results as r INNER JOIN Formats as f ON r.formatId = f.id \n"
+				+ "WHERE r.roundTypeId in (SELECT id FROM RoundTypes WHERE not name LIKE 'Combined%') \n"
+				+ "AND f.expected_solve_count <> IF(value1<>0,1,0) + IF(value2<>0,1,0) + IF(value3<>0,1,0) + IF(value4<>0,1,0) + IF(value5<>0,1,0)";
+		generalAnalysis(topic, query);
+	}
+
+	// 2013 or later
+	private void moreThanTwoDifferentNumbersOfResultsForCombinedRounds() {
+		String topic = "More than two different numbers of results for combined rounds (2013 or later)";
+		String query = "SELECT RIGHT(competitionId,4) as year, competitionId, eventId, roundTypeId, \n"
+				+ "COUNT(distinct IF(value1<>0,1,0) + IF(value2<>0,1,0) + IF(value3<>0,1,0) + IF(value4<>0,1,0) + IF(value5<>0,1,0)) as num_results\n"
+				+ "FROM Results WHERE roundTypeId in ('c','d','e','g','h') and RIGHT(competitionId,4) >= 2013\n"
+				+ "GROUP BY competitionId, eventId, roundTypeId HAVING num_results > 2\n"
+				+ "ORDER BY year DESC, competitionId LIMIT 100";
+		generalAnalysis(topic, query);
+	}
+
+	private void badlyAppliedCuttofs() {
+		String topic = "Badly applied cutoffs";
+		String query = "SELECT a.competitionId, a.eventId, a.roundTypeId, b.cutoff, GROUP_CONCAT(a.personId) as violations FROM Results as a\n"
+				+ "INNER JOIN (SELECT competitionId, eventId, roundTypeId, MIN(best) as cutoff, MAX(ABS(value2)) as ref2, MAX(ABS(value3)) as ref3 FROM Results\n"
+				+ "     WHERE roundTypeId in ('c','d','e','g','h') and formatId in ('a','m') and average=0 and best>0\n"
+				+ "     GROUP BY competitionId, eventId, roundTypeId) as b\n"
+				+ "ON a.competitionId=b.competitionId AND a.eventId=b.eventId AND a.roundTypeId=b.roundTypeId\n"
+				+ "WHERE a.roundTypeId in ('c','d','e','g','h') AND average<>0 AND \n"
+				+ "((ref2=0 AND (value1<0 OR value1>cutoff)) \n"
+				+ " OR (ref3=0 AND (value1<0 OR value1>cutoff) AND (value2<0 OR value2>cutoff))\n"
+				+ " OR (value1<0 OR value1>cutoff) AND (value2<0 OR value2>cutoff) AND (value3<0 OR value3>cutoff))\n"
+				+ "GROUP BY competitionId, eventId, roundTypeId\n"
+				+ "ORDER BY RIGHT(a.competitionId,4), competitionId LIMIT 100";
+		generalAnalysis(topic, query);
+	}
+
+	private void onlyDnsOrZeroResults() {
+		String topic = "Only DNS or zero results";
+		String query = "SELECT * FROM Results WHERE ABS(1+value1)=1 AND ABS(1+value2)=1 AND ABS(1+value3)=1 AND ABS(1+value4)=1 AND ABS(1+value5)=1";
+		generalAnalysis(topic, query);
+	}
+
+	private void nonZeroAverageForRowsWithLessThanEquals2Attempt() {
+		String topic = "Non-zero average for rows with<=2 attempt";
+		String query = "SELECT * FROM Results WHERE average <> 0 AND IF(value1<>0,1,0) + IF(value2<>0,1,0) + IF(value3<>0,1,0) + IF(value4<>0,1,0) + IF(value5<>0,1,0) <= 2";
 		generalAnalysis(topic, query);
 	}
 
