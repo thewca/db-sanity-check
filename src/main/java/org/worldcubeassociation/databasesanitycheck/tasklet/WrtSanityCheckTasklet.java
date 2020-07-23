@@ -49,7 +49,7 @@ public class WrtSanityCheckTasklet implements Tasklet {
 	public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext)
 			throws DataAccessException, IOException, SQLException {
 
-		/*incorrectDOB();
+		incorrectDOB();
 
 		missingDOBAtScale();
 
@@ -65,7 +65,7 @@ public class WrtSanityCheckTasklet implements Tasklet {
 		emptyGender();
 
 		// TODO takes long in developing
-		// inconsistentWcaId();
+		inconsistentWcaId();
 
 		personsTableEntriesWithoutResultsTableEntry();
 		resultsTableEntriesWithoutPersonsTableEntry();
@@ -81,31 +81,41 @@ public class WrtSanityCheckTasklet implements Tasklet {
 		badlyAppliedCuttofs();
 		onlyDnsOrZeroResults();
 		nonZeroAverageForRowsWithLessThanEquals2Attempt();
-		
+
 		duplicateResults();
-		
+
 		// TODO timeLimitViolation
-		
+
 		// Consistency of results and scrambles
 		roundInScramblesWithNoResultsButWithCompetitionIdInResults();
 		roundsWithResultsButNoScramblesButWithCompetitionIdInScrambles();
-		
+
 		// Duplicate scrambles
 		duplicatesWithinScramblesForOneCompetitionId();
 		duplicatesAcrossMultipleCompetitionsIgnoring222AndSkewb();
 		duplicateRows();
-		
+
 		// Invalid Scrambles entries
 		invalidGroupIds();
 		scramblesWithLeadingOrTrailingSpaces();
-		// TODO Wrong number of scrambles*/
-		
+		// TODO Wrong number of scrambles
+
 		// Invalid competitionIds
 		lowercaseCompetitionIds();
 		competitionIdsNotEndingWithYearOrEndYear();
-		
+
 		// Suspicious cutoffs & time limits
-		
+		timeLimitGreaterThanCutoff();
+		cutoffLessThan5Seconds();
+		timeLimitLessThan10Seconds();
+		timeLimitGreaterThan10MinutesForFastEvents();
+
+		// Irregular user account data
+		nonExistingClaimedWCAIDs();
+
+		// Non-Posted Results
+		inconsistentNameInUsersTable();
+		notPublicCompetition();
 
 		// Show results with a warn
 		for (String key : map.keySet()) {
@@ -299,82 +309,132 @@ public class WrtSanityCheckTasklet implements Tasklet {
 		String query = "SELECT * FROM Results WHERE average <> 0 AND IF(value1<>0,1,0) + IF(value2<>0,1,0) + IF(value3<>0,1,0) + IF(value4<>0,1,0) + IF(value5<>0,1,0) <= 2";
 		generalAnalysis(topic, query);
 	}
-	
+
 	private void duplicateResults() {
 		String topic = "Duplicate results";
-		String query = "SELECT value1, value2, value3, value4, value5, GROUP_CONCAT(distinct eventId) as events, GROUP_CONCAT(distinct personId) as people, GROUP_CONCAT(distinct competitionId), count(*) as amount FROM Results\n" + 
-				"WHERE IF(value1>0,1,0) + IF(value2>0,1,0) + IF(value3>0,1,0) + IF(value4>0,1,0) + IF(value5>0,1,0) > 1 AND eventId not in ('333mbo', '333fm')\n" + 
-				"GROUP BY value1, value2, value3, value4, value5 HAVING amount > 1 AND count(distinct competitionId) = 1 ORDER BY amount DESC LIMIT 100";
+		String query = "SELECT value1, value2, value3, value4, value5, GROUP_CONCAT(distinct eventId) as events, GROUP_CONCAT(distinct personId) as people, GROUP_CONCAT(distinct competitionId), count(*) as amount FROM Results\n"
+				+ "WHERE IF(value1>0,1,0) + IF(value2>0,1,0) + IF(value3>0,1,0) + IF(value4>0,1,0) + IF(value5>0,1,0) > 1 AND eventId not in ('333mbo', '333fm')\n"
+				+ "GROUP BY value1, value2, value3, value4, value5 HAVING amount > 1 AND count(distinct competitionId) = 1 ORDER BY amount DESC LIMIT 100";
 		generalAnalysis(topic, query);
 	}
-	
+
 	// private void timeLimitViolation()
-	
+
 	private void roundInScramblesWithNoResultsButWithCompetitionIdInResults() {
 		String topic = "Round in Scrambles with no results, but with competitionId in Results";
-		String query = "SELECT distinct competitionId, eventId, roundTypeId FROM Scrambles\n" + 
-				"WHERE competitionId in (SELECT competitionId FROM Results) AND CONCAT(competitionId,eventId,roundTypeId) not in (SELECT CONCAT(competitionId,eventId,roundTypeId) FROM Results) \n" + 
-				"ORDER BY competitionId,eventId LIMIT 100";
+		String query = "SELECT distinct competitionId, eventId, roundTypeId FROM Scrambles\n"
+				+ "WHERE competitionId in (SELECT competitionId FROM Results) AND CONCAT(competitionId,eventId,roundTypeId) not in (SELECT CONCAT(competitionId,eventId,roundTypeId) FROM Results) \n"
+				+ "ORDER BY competitionId,eventId LIMIT 100";
 		generalAnalysis(topic, query);
 	}
-	
+
 	private void roundsWithResultsButNoScramblesButWithCompetitionIdInScrambles() {
 		String topic = "Rounds with results, no scrambles, but with competitionId in Scrambles";
-		String query = "SELECT distinct competitionId, eventId, roundTypeId FROM Results\n" + 
-				"WHERE competitionId in (SELECT competitionId FROM Scrambles) AND CONCAT(competitionId,eventId,roundTypeId) not in (SELECT CONCAT(competitionId,eventId,roundTypeId) FROM Scrambles)\n" + 
-				"ORDER BY competitionId, eventId LIMIT 100";
+		String query = "SELECT distinct competitionId, eventId, roundTypeId FROM Results\n"
+				+ "WHERE competitionId in (SELECT competitionId FROM Scrambles) AND CONCAT(competitionId,eventId,roundTypeId) not in (SELECT CONCAT(competitionId,eventId,roundTypeId) FROM Scrambles)\n"
+				+ "ORDER BY competitionId, eventId LIMIT 100";
 		generalAnalysis(topic, query);
 	}
-	
+
 	private void duplicatesWithinScramblesForOneCompetitionId() {
 		String topic = "Duplicates within scrambles for one competitionId";
-		String query = "select competitionId, scramble, count(*) qt from Scrambles\n" + 
-				"group by competitionId, scramble having qt > 1";
-		generalAnalysis(topic, query);	
+		String query = "select competitionId, scramble, count(*) qt from Scrambles\n"
+				+ "group by competitionId, scramble having qt > 1";
+		generalAnalysis(topic, query);
 	}
-	
+
 	private void duplicatesAcrossMultipleCompetitionsIgnoring222AndSkewb() {
 		String topic = "Duplicates across multiple competitions ignoring 222 and skewb";
-		String query = "SELECT GROUP_CONCAT(distinct eventId ORDER BY eventId) AS events, GROUP_CONCAT(distinct competitionId) as comps, scramble, count(scrambleId) AS scount, GROUP_CONCAT(scrambleId) AS scramleIds\n" + 
-				"FROM Scrambles WHERE eventId not in ('222', 'skewb') GROUP BY scramble\n" + 
-				"HAVING count(scrambleId) > 1 AND count(distinct competitionId) > 1 LIMIT 100";
+		String query = "SELECT GROUP_CONCAT(distinct eventId ORDER BY eventId) AS events, GROUP_CONCAT(distinct competitionId) as comps, scramble, count(scrambleId) AS scount, GROUP_CONCAT(scrambleId) AS scramleIds\n"
+				+ "FROM Scrambles WHERE eventId not in ('222', 'skewb') GROUP BY scramble\n"
+				+ "HAVING count(scrambleId) > 1 AND count(distinct competitionId) > 1 LIMIT 100";
 		generalAnalysis(topic, query);
-		
+
 	}
-	
+
 	private void duplicateRows() {
 		String topic = "Duplicate rows";
-		String query = "SELECT * FROM Scrambles t1 INNER JOIN Scrambles t2\n" + 
-				"WHERE t1.scrambleId < t2.scrambleId AND t1.competitionId=t2.competitionId AND t1.eventId=t2.eventId AND t1.roundTypeId=t2.roundTypeId AND t1.groupId=t2.groupId AND t1.isExtra=t2.isExtra AND t1.scrambleNum=t2.scrambleNum AND t1.scramble=t2.scramble";
+		String query = "SELECT * FROM Scrambles t1 INNER JOIN Scrambles t2\n"
+				+ "WHERE t1.scrambleId < t2.scrambleId AND t1.competitionId=t2.competitionId AND t1.eventId=t2.eventId AND t1.roundTypeId=t2.roundTypeId AND t1.groupId=t2.groupId AND t1.isExtra=t2.isExtra AND t1.scrambleNum=t2.scrambleNum AND t1.scramble=t2.scramble";
 		generalAnalysis(topic, query);
 	}
-	
+
 	private void invalidGroupIds() {
 		String topic = "Invalid groupIds";
-		String query = "SELECT distinct groupId FROM Scrambles \n" + 
-				"WHERE CAST(groupId AS BINARY) NOT REGEXP '^[A-Z]+$'";
+		String query = "SELECT distinct groupId FROM Scrambles \n"
+				+ "WHERE CAST(groupId AS BINARY) NOT REGEXP '^[A-Z]+$'";
 		generalAnalysis(topic, query);
 	}
-	
+
 	private void scramblesWithLeadingOrTrailingSpaces() {
 		String topic = "Scrambles with leading or trailing spaces";
 		String query = "SELECT * FROM Scrambles WHERE LENGTH(scramble) != LENGTH(TRIM(scramble))";
 		generalAnalysis(topic, query);
 	}
-	
+
 	// TODO private void wrongNumberOfScrambles()
-	
+
 	private void lowercaseCompetitionIds() {
 		String topic = "Lowercase competitionIds";
 		String query = "SELECT * FROM Competitions WHERE announced_at is not NULL and BINARY id REGEXP '^[a-z]'";
 		generalAnalysis(topic, query);
 	}
-	
-	
-	
+
 	private void competitionIdsNotEndingWithYearOrEndYear() {
 		String topic = "competitionIds not ending with year or endYear";
 		String query = "SELECT * FROM Competitions WHERE announced_at is not NULL and BINARY id REGEXP '^[a-z]'";
+		generalAnalysis(topic, query);
+	}
+
+	private void timeLimitGreaterThanCutoff() {
+		String topic = "Time limit > cutoff";
+		String query = "SELECT ce.competition_id, ce.event_id, CONVERT(MID(ro.time_limit, 17, 10), UNSIGNED INTEGER) time_limit, CONVERT(MID(ro.cutoff, 39, 10), UNSIGNED INTEGER) cutoff\n"
+				+ "FROM rounds as ro INNER JOIN competition_events as ce on ce.id = ro.competition_event_id\n"
+				+ "WHERE time_limit is not NULL and ro.cutoff is not NULL\n"
+				+ "HAVING time_limit> 0 and time_limit < cutoff";
+		generalAnalysis(topic, query);
+	}
+
+	private void cutoffLessThan5Seconds() {
+		String topic = "Cutoff < 5 seconds";
+		String query = "SELECT ce.competition_id, ce.event_id, CONVERT(MID(ro.cutoff, 39, 10), UNSIGNED INTEGER) cutoff\n"
+				+ "FROM rounds as ro INNER JOIN competition_events as ce on ce.id = ro.competition_event_id\n"
+				+ "WHERE ro.cutoff is not NULL and ce.event_id <> '333fm' \n" + "HAVING cutoff < 500";
+		generalAnalysis(topic, query);
+	}
+
+	private void timeLimitLessThan10Seconds() {
+		String topic = "Time limit < 10 seconds";
+		String query = "SELECT ce.competition_id, ce.event_id, CONVERT(MID(ro.time_limit, 17, 10), UNSIGNED INTEGER) time_limit\n"
+				+ "FROM rounds as ro INNER JOIN competition_events as ce on ce.id = ro.competition_event_id\n"
+				+ "WHERE time_limit is not NULL\n" + "HAVING time_limit> 0 and time_limit < 1000";
+		generalAnalysis(topic, query);
+	}
+
+	private void timeLimitGreaterThan10MinutesForFastEvents() {
+		String topic = "Time limit > 10 minutes for fast events";
+		String query = "SELECT ce.competition_id, ce.event_id, CONVERT(MID(ro.time_limit, 17, 10), UNSIGNED INTEGER) time_limit\n"
+				+ "FROM rounds as ro INNER JOIN competition_events as ce on ce.id = ro.competition_event_id\n"
+				+ "WHERE time_limit is not NULL and ce.event_id in ('333', '222', '444', '333oh', 'clock', 'mega', 'pyram', 'skewb', 'sq1') HAVING time_limit> 60000";
+		generalAnalysis(topic, query);
+	}
+
+	private void nonExistingClaimedWCAIDs() {
+		String topic = "Non-existing claimed WCA-IDs";
+		String query = "SELECT * FROM users where wca_id not in (SELECT id FROM Persons)";
+		generalAnalysis(topic, query);
+	}
+
+	private void inconsistentNameInUsersTable() {
+		String topic = "Inconsistent name in users table";
+		String query = "SELECT p.id, p.name as profile_name, u.name as account_name FROM Persons p \n"
+				+ "INNER JOIN users u ON p.id=u.wca_id AND p.name<>u.name AND p.subId=1";
+		generalAnalysis(topic, query);
+	}
+
+	private void notPublicCompetition() {
+		String topic = "Find not public competition";
+		String query = "SELECT id FROM Competitions WHERE results_posted_by IS NULL AND announced_at IS NOT NULL AND id IN (SELECT competitionId FROM Results)";
 		generalAnalysis(topic, query);
 	}
 
