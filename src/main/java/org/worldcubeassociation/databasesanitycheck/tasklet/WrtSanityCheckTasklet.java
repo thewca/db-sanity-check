@@ -26,7 +26,7 @@ public class WrtSanityCheckTasklet implements Tasklet {
 			throws DataAccessException, IOException, SQLException {
 
 		jdbcTemplate.query(
-		        "select * from Formats;",
+		        "SELECT id, name FROM Persons WHERE BINARY MID(REVERSE(name), LOCATE(\"\" \"\", REVERSE(name))-1,1) <> UPPER(MID(REVERSE(name), LOCATE(\"\" \"\", REVERSE(name))-1,1));",
 		        (rs, rowNum) -> ""+rs.getString("id")+" "+ rs.getString("name")
 		    ).forEach(format -> log.info(format.toString()));
 

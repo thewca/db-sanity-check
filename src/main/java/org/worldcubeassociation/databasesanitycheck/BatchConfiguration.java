@@ -13,6 +13,9 @@ import org.worldcubeassociation.databasesanitycheck.tasklet.DatabaseExportDownlo
 import org.worldcubeassociation.databasesanitycheck.tasklet.ExecuteDownloadedSqlTasklet;
 import org.worldcubeassociation.databasesanitycheck.tasklet.WrtSanityCheckTasklet;
 
+//This is not yet in use, until the invalid date gets fixed on the export.
+//https://github.com/thewca/worldcubeassociation.org/blob/44161b981c891032fecc3c4ed8944521d87dff3b/WcaOnRails/db/structure.sql#L99
+
 @Configuration
 @EnableBatchProcessing
 public class BatchConfiguration {
@@ -38,12 +41,14 @@ public class BatchConfiguration {
 		// Daily DailyJobTimestamper makes this executes at most once a day
 
 		// TODO
-		// return jobBuilderFactory.get("handleDatabaseExport").incrementer(new
-		// DailyJobTimestamper()).start(downloadExport())
-		// .next(executeSql()).next(wrtSanityCheck()).build();
+		/*
+		 * return jobBuilderFactory.get("handleDatabaseExport") .incrementer(new
+		 * DailyJobTimestamper()) // This makes the execution an most once a day
+		 * .start(downloadExport()) .next(executeSql()).next(wrtSanityCheck()).build();
+		 */
 
-		return jobBuilderFactory.get("handleDatabaseExport").incrementer(new RunIdIncrementer())
-				.start(wrtSanityCheck()).build();
+		return jobBuilderFactory.get("handleDatabaseExport").incrementer(new RunIdIncrementer()).start(wrtSanityCheck())
+				.build();
 
 	}
 
