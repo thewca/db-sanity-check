@@ -49,7 +49,6 @@ public class BatchConfiguration {
 
 		return jobBuilderFactory.get("handleDatabaseExport").incrementer(new RunIdIncrementer()).start(wrtSanityCheck())
 				.build();
-
 	}
 
 	@Bean
