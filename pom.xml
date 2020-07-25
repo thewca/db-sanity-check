@@ -92,6 +92,7 @@
 	</dependencies>
 
 	<build>
+		<finalName>db-sanity-check</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>

@@ -119,7 +119,7 @@ public class WrtSanityCheckTasklet implements Tasklet {
 
 		// Show results with a warn
 		for (String key : map.keySet()) {
-			log.warn("Inconsistency at " + key);
+			log.warn("Inconsistency in the topic " + key);
 			for (String result : map.get(key)) {
 				log.info(result);
 			}
