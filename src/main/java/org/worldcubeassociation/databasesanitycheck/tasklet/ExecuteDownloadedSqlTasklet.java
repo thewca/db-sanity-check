@@ -17,8 +17,7 @@ import org.springframework.stereotype.Component;
 
 import lombok.extern.slf4j.Slf4j;
 
-// This is not yet in use, until the invalid date gets fixed on the export.
-// https://github.com/thewca/worldcubeassociation.org/blob/44161b981c891032fecc3c4ed8944521d87dff3b/WcaOnRails/db/structure.sql#L99
+//Not used for now. get_db_export.sh replace this.
 
 @Slf4j
 @Component

@@ -13,6 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 
+// Not used for now. get_db_export.sh replace this.
+
 @Slf4j
 @Component
 public class DatabaseExportDownloadTasklet implements Tasklet {

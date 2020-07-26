@@ -8,8 +8,6 @@ import org.springframework.batch.core.configuration.annotation.StepBuilderFactor
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.worldcubeassociation.databasesanitycheck.tasklet.DatabaseExportDownloadTasklet;
-import org.worldcubeassociation.databasesanitycheck.tasklet.ExecuteDownloadedSqlTasklet;
 import org.worldcubeassociation.databasesanitycheck.tasklet.WrtSanityCheckTasklet;
 
 //This is not yet in use, until the invalid date gets fixed on the export.
@@ -26,29 +24,12 @@ public class BatchConfiguration {
 	public StepBuilderFactory stepBuilderFactory;
 
 	@Autowired
-	private DatabaseExportDownloadTasklet databaseExportDownloadTasklet;
-
-	@Autowired
-	private ExecuteDownloadedSqlTasklet executeDownloadedSqlTasklet;
-
-	@Autowired
 	private WrtSanityCheckTasklet wrtSanityCheckTasklet;
 
 	@Bean
 	public Job downloadDatabaseExport() {
 
-		return jobBuilderFactory.get("handleDatabaseExport").start(downloadExport()).next(executeSql())
-				.next(wrtSanityCheck()).build();
-	}
-
-	@Bean
-	public Step downloadExport() {
-		return stepBuilderFactory.get("downloadExport").tasklet(databaseExportDownloadTasklet).build();
-	}
-
-	@Bean
-	public Step executeSql() {
-		return stepBuilderFactory.get("executeSql").tasklet(executeDownloadedSqlTasklet).build();
+		return jobBuilderFactory.get("handleDatabaseExport").start(wrtSanityCheck()).build();
 	}
 
 	@Bean
