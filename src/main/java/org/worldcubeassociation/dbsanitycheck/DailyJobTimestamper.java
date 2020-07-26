@@ -1,4 +1,4 @@
-package org.worldcubeassociation.databasesanitycheck;
+package org.worldcubeassociation.dbsanitycheck;
 
 import java.time.LocalDate;
 

@@ -1,4 +1,4 @@
-package org.worldcubeassociation.databasesanitycheck.tasklet;
+package org.worldcubeassociation.dbsanitycheck.tasklet;
 
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
@@ -7,7 +7,7 @@ import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.worldcubeassociation.databasesanitycheck.api.WcaApi;
+import org.worldcubeassociation.dbsanitycheck.api.WcaApi;
 
 import lombok.extern.slf4j.Slf4j;
 import net.lingala.zip4j.core.ZipFile;

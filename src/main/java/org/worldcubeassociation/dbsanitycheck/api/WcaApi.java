@@ -1,4 +1,4 @@
-package org.worldcubeassociation.databasesanitycheck.api;
+package org.worldcubeassociation.dbsanitycheck.api;
 
 import java.io.File;
 import java.io.IOException;

@@ -1,4 +1,4 @@
-package org.worldcubeassociation.databasesanitycheck.tasklet;
+package org.worldcubeassociation.dbsanitycheck.tasklet;
 
 import java.io.IOException;
 import java.sql.ResultSetMetaData;
