@@ -21,7 +21,8 @@ You need your copy of the database from WCA. If you alredy have it (with a user 
 
 Download [the latest export](https://www.worldcubeassociation.org/wst/wca-developer-database-dump.zip) and execute the sql (as stated in the last step). If you wish, you can execute the file `get_db_export.sh` in this folder.
 
-```chmod +x get_db_export.sh
+```
+chmod +x get_db_export.sh
 ./get_db_export.sh
 ```
 
