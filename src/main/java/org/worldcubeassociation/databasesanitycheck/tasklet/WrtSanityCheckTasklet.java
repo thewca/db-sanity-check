@@ -64,7 +64,7 @@ public class WrtSanityCheckTasklet implements Tasklet {
 
 		emptyGender();
 
-		// TODO takes long in developing
+		// Takes long in developing
 		inconsistentWcaId();
 
 		personsTableEntriesWithoutResultsTableEntry();
