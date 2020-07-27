@@ -92,7 +92,7 @@ public class WrtSanityCheckTasklet implements Tasklet {
 
 		// Duplicate scrambles
 		duplicatesWithinScramblesForOneCompetitionId();
-		duplicatesAcrossMultipleCompetitionsIgnoring222AndSkewb();
+		//duplicatesAcrossMultipleCompetitionsIgnoring222AndSkewb();
 		duplicateRows();
 
 		// Invalid Scrambles entries
@@ -274,11 +274,13 @@ public class WrtSanityCheckTasklet implements Tasklet {
 	// 2013 or later
 	private void moreThanTwoDifferentNumbersOfResultsForCombinedRounds() {
 		String topic = "More than two different numbers of results for combined rounds (2013 or later)";
-		String query = "SELECT RIGHT(competitionId,4) as year, competitionId, eventId, roundTypeId, \n"
-				+ "COUNT(distinct IF(value1<>0,1,0) + IF(value2<>0,1,0) + IF(value3<>0,1,0) + IF(value4<>0,1,0) + IF(value5<>0,1,0)) as num_results\n"
-				+ "FROM Results WHERE roundTypeId in ('c','d','e','g','h') and RIGHT(competitionId,4) >= 2013\n"
-				+ "GROUP BY competitionId, eventId, roundTypeId HAVING num_results > 2\n"
-				+ "ORDER BY year DESC, competitionId LIMIT 100";
+		String query = "SELECT competitionId, eventId, roundTypeId, COUNT(solves) as num_results\n" + 
+				"FROM (SELECT DISTINCT competitionId, eventId, roundTypeId, IF(value1<>0,1,0) \n" + 
+				" + IF(value2<>0,1,0) + IF(value3<>0,1,0) + IF(value4<>0,1,0) + IF(value5<>0,1,0) as solves\n" + 
+				"FROM Results WHERE RIGHT(competitionId, 4) >= 2013) re\n" + 
+				"GROUP BY competitionId, eventId, roundTypeId \n" + 
+				"HAVING IF(roundTypeId in ('c','d','e','g','h'), num_results > 2, num_results > 1)\n" + 
+				"ORDER BY competitionId LIMIT 100";
 		generalAnalysis(topic, query);
 	}
 
@@ -427,8 +429,7 @@ public class WrtSanityCheckTasklet implements Tasklet {
 
 	private void inconsistentNameInUsersTable() {
 		String topic = "Inconsistent name in users table";
-		String query = "SELECT p.id, p.name as profile_name, u.name as account_name FROM Persons p \n"
-				+ "INNER JOIN users u ON p.id=u.wca_id AND p.name<>u.name AND p.subId=1";
+		String query = "SELECT p.id, p.name, u.name FROM Persons p INNER JOIN users u ON p.id=u.wca_id AND p.name<>u.name AND p.subId=1";
 		generalAnalysis(topic, query);
 	}
 
