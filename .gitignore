@@ -37,3 +37,5 @@ export/
 wca-developer-database-dump*
 
 .attach_pid*
+
+log/
