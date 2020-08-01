@@ -51,15 +51,10 @@ public class WrtSanityCheckTasklet implements Tasklet {
 			throws DataAccessException, IOException, SQLException {
 
 		fillQueries();
-		executeQueries();
+		log.info("{} queries found", queries.size());
 
-		// Show results with a warn
-		for (String key : map.keySet()) {
-			log.warn("Inconsistency in the topic " + key);
-			for (String result : map.get(key)) {
-				log.info(result);
-			}
-		}
+		executeQueries();
+		showResults();
 
 		return RepeatStatus.FINISHED;
 	}
@@ -84,7 +79,7 @@ public class WrtSanityCheckTasklet implements Tasklet {
 		query = "SELECT * FROM Persons WHERE BINARY MID(REVERSE(name), LOCATE(\"\" \"\", REVERSE(name))-1,1) <> UPPER(MID(REVERSE(name), LOCATE(\"\" \"\", REVERSE(name))-1,1))";
 		queries.put(topic, query);
 
-		topic = "Missing one bracket for local name";
+		topic = "Lowercase last name with local name";
 		query = "SELECT * FROM Persons WHERE name LIKE '%(%' and BINARY MID(REVERSE(LEFT(name, LOCATE('(',name)-2)), LOCATE(' ', REVERSE(LEFT(name, LOCATE('(',name)-2)))-1,1) <> UPPER(MID(REVERSE(LEFT(name, LOCATE('(',name)-2)), LOCATE(' ', REVERSE(LEFT(name, LOCATE('(',name)-2)))-1,1))";
 		queries.put(topic, query);
 
@@ -96,7 +91,11 @@ public class WrtSanityCheckTasklet implements Tasklet {
 		query = "SELECT * FROM Persons WHERE (name LIKE '%(%' OR name LIKE '%)') AND name NOT LIKE '%(%)%'";
 		queries.put(topic, query);
 
-		topic = "Trailing spaces";
+		topic = "Trailing whitespaces in names";
+		query = "SELECT * FROM Persons WHERE name LIKE ' %' OR name LIKE '% '";
+		queries.put(topic, query);
+
+		topic = "Trailing whitespaces in local names";
 		query = "SELECT * FROM Persons WHERE name LIKE '%( %' OR name LIKE '% )'";
 		queries.put(topic, query);
 
@@ -105,6 +104,14 @@ public class WrtSanityCheckTasklet implements Tasklet {
 		int maxAcceptedYear = currentYear - minAcceptedAge;
 		query = "SELECT * FROM Persons WHERE year > 0 AND (year < " + minAcceptedYear + " OR year >= " + maxAcceptedYear
 				+ ")";
+		queries.put(topic, query);
+
+		topic = "Missing DOB at scale";
+		int year = currentYear - 2;
+		query = "SELECT competitionId, count(distinct personId) as missingDOBs\n"
+				+ "FROM Results INNER JOIN Persons ON Results.personId=Persons.id\n"
+				+ "WHERE Persons.year=0 AND RIGHT(competitionId,4) > " + year + "\n"
+				+ "GROUP BY competitionId HAVING missingDOBs >= " + missingDOBAtScale + " ORDER BY missingDOBs DESC";
 		queries.put(topic, query);
 
 		topic = "Empty gender";
@@ -117,14 +124,6 @@ public class WrtSanityCheckTasklet implements Tasklet {
 				+ "GROUP BY personID HAVING first_year <> LEFT(personId,4)";
 		queries.put(topic, query);
 
-		topic = "Missing DOB at scale";
-		int year = currentYear - 2;
-		query = "SELECT competitionId, count(distinct personId) as missingDOBs\n"
-				+ "FROM Results INNER JOIN Persons ON Results.personId=Persons.id\n"
-				+ "WHERE Persons.year=0 AND RIGHT(competitionId,4) > " + year + "\n"
-				+ "GROUP BY competitionId HAVING missingDOBs >= " + missingDOBAtScale + " ORDER BY missingDOBs DESC";
-		queries.put(topic, query);
-
 		topic = "Persons table entries without Results table entry";
 		query = "SELECT * FROM Persons WHERE id NOT IN (SELECT personId FROM Results)";
 		queries.put(topic, query);
@@ -132,6 +131,10 @@ public class WrtSanityCheckTasklet implements Tasklet {
 		topic = "Results table entries without Persons table entry";
 		query = "SELECT * FROM Results WHERE personId NOT IN (SELECT id FROM Persons)";
 		queries.put(topic, query);
+
+		// TODO
+		// 3. Running script 2b (""Check existing people""):
+		// https://www.worldcubeassociation.org/results/admin/persons_check_finished.php"
 
 		topic = "Empty first solve";
 		query = "SELECT * FROM Results WHERE value1=0";
@@ -150,7 +153,7 @@ public class WrtSanityCheckTasklet implements Tasklet {
 				+ " + IF(value2<>0,1,0) + IF(value3<>0,1,0) + IF(value4<>0,1,0) + IF(value5<>0,1,0) as solves\n"
 				+ "FROM Results WHERE RIGHT(competitionId, 4) >= 2013) re\n"
 				+ "GROUP BY competitionId, eventId, roundTypeId \n"
-				+ "HAVING IF(roundTypeId in ('c','d','e','g','h'), num_results > 2, num_results > 1)\n"
+				+ "HAVING IF(roundTypeId in (\"c\",\"d\",\"e\",\"g\",\"h\"), num_results > 2, num_results > 1)\n"
 				+ "ORDER BY competitionId LIMIT 100";
 		queries.put(topic, query);
 
@@ -196,10 +199,7 @@ public class WrtSanityCheckTasklet implements Tasklet {
 				+ "ORDER BY competitionId, eventId LIMIT 100";
 		queries.put(topic, query);
 
-		topic = "Duplicates within scrambles for one competitionId";
-		query = "select competitionId, scramble, count(*) qt from Scrambles\n"
-				+ "group by competitionId, scramble having qt > 1";
-		queries.put(topic, query);
+		// TODO Duplicates within scrambles for one competitionId"
 
 		topic = "Duplicates across multiple competitions ignoring 222 and skewb";
 		query = "SELECT GROUP_CONCAT(distinct eventId ORDER BY eventId) AS events, GROUP_CONCAT(distinct competitionId) as comps, \n"
@@ -212,13 +212,13 @@ public class WrtSanityCheckTasklet implements Tasklet {
 				+ "GROUP BY scramble HAVING count(distinct competitionId) > 1";
 		queries.put(topic, query);
 
-		topic = "Duplicate rows";
+		topic = "Duplicate rows (multiple imports)";
 		query = "SELECT * FROM Scrambles t1 INNER JOIN Scrambles t2\n"
 				+ "WHERE t1.scrambleId < t2.scrambleId AND t1.competitionId=t2.competitionId AND t1.eventId=t2.eventId AND t1.roundTypeId=t2.roundTypeId AND t1.groupId=t2.groupId AND t1.isExtra=t2.isExtra AND t1.scrambleNum=t2.scrambleNum AND t1.scramble=t2.scramble";
 		queries.put(topic, query);
 
 		topic = "Invalid groupIds";
-		query = "SELECT distinct groupId FROM Scrambles \n" + "WHERE CAST(groupId AS BINARY) NOT REGEXP '^[A-Z]+$'";
+		query = "SELECT distinct groupId FROM Scrambles WHERE CAST(groupId AS BINARY) NOT REGEXP '^[A-Z]+$'";
 		queries.put(topic, query);
 
 		topic = "Scrambles with leading or trailing spaces";
@@ -232,7 +232,7 @@ public class WrtSanityCheckTasklet implements Tasklet {
 		queries.put(topic, query);
 
 		topic = "competitionIds not ending with year or endYear";
-		query = "SELECT * FROM Competitions WHERE announced_at is not NULL and BINARY id REGEXP '^[a-z]'";
+		query = "SELECT * FROM Competitions WHERE announced_at is not NULL AND RIGHT(id,4) <> year AND RIGHT(id,4) <> endYear";
 		queries.put(topic, query);
 
 		topic = "Time limit > cutoff";
@@ -251,7 +251,7 @@ public class WrtSanityCheckTasklet implements Tasklet {
 		topic = "Time limit < 10 seconds";
 		query = "SELECT ce.competition_id, ce.event_id, CONVERT(MID(ro.time_limit, 17, 10), UNSIGNED INTEGER) time_limit\n"
 				+ "FROM rounds as ro INNER JOIN competition_events as ce on ce.id = ro.competition_event_id\n"
-				+ "WHERE time_limit is not NULL\n" + "HAVING time_limit> 0 and time_limit < 1000";
+				+ "WHERE time_limit is not NULL HAVING time_limit> 0 and time_limit < 1000";
 		queries.put(topic, query);
 
 		topic = "Time limit > 10 minutes for fast events";
@@ -265,8 +265,11 @@ public class WrtSanityCheckTasklet implements Tasklet {
 		queries.put(topic, query);
 
 		topic = "Inconsistent name in users table";
-		query = "SELECT p.id, p.name, u.name FROM Persons p INNER JOIN users u ON p.id=u.wca_id AND p.name<>u.name AND p.subId=1";
+		query = "SELECT p.id, p.name, u.name FROM Persons p \n" + 
+				"INNER JOIN users u ON p.id=u.wca_id AND p.name<>u.name AND p.subId=1";
 		queries.put(topic, query);
+
+		// TODO Big BLD Means
 
 		topic = "Find not public competition";
 		query = "SELECT id FROM Competitions WHERE results_posted_by IS NULL AND announced_at IS NOT NULL AND id IN (SELECT competitionId FROM Results)";
@@ -279,7 +282,7 @@ public class WrtSanityCheckTasklet implements Tasklet {
 			generalAnalysis(topic, query);
 		});
 	}
-	
+
 	/**
 	 * A general purpose analysis. If the query returns any value, it will be added
 	 * to the map
@@ -309,6 +312,16 @@ public class WrtSanityCheckTasklet implements Tasklet {
 			log.info("Found {} results for {}", result.size(), topic);
 			map.put(topic, result);
 		}
+	}
+
+	private void showResults() {
+		for (String key : map.keySet()) {
+			log.warn("Inconsistency in the topic " + key);
+			for (String result : map.get(key)) {
+				log.info(result);
+			}
+		}
+
 	}
 
 }
