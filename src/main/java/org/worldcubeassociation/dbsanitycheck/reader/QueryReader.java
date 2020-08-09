@@ -28,7 +28,7 @@ public class QueryReader {
 	public List<QueryBean> read() throws UnexpectedInputException, ParseException, Exception {
 		ClassPathResource queriesFile = new ClassPathResource("queries.csv");
 
-		log.info("Read from file {}", queriesFile.getFile().getAbsolutePath());
+		log.info("Read from file {}", queriesFile);
 
 		FlatFileItemReader<QueryBean> itemReader = new FlatFileItemReader<>();
 		itemReader.setResource(queriesFile);

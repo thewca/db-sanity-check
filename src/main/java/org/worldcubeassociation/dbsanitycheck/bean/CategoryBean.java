@@ -16,13 +16,9 @@ public class CategoryBean {
 		this.category = category;
 	}
 
-	public void addQuery(String topic, String query) throws SanityCheckException {
-		QueryBean queryBean = new QueryBean();
-		queryBean.setTopic(topic);
-		queryBean.setQuery(query);
-
+	public void addQuery(QueryBean queryBean) throws SanityCheckException {
 		if (queries.contains(queryBean)) {
-			throw new SanityCheckException(String.format("Topic %s already exists.", topic));
+			throw new SanityCheckException(String.format("Topic %s already exists.", queryBean));
 		}
 		
 		queries.add(queryBean);

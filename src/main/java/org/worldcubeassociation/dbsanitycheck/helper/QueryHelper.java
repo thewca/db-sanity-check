@@ -41,8 +41,9 @@ public class QueryHelper {
 		validateParam("Topic", topic);
 		validateParam("Query", query);
 
+		// Gets from or create the key in the hashMap
 		CategoryBean cat = categories.computeIfAbsent(category, s -> new CategoryBean(category));
-		cat.addQuery(topic, query);
+		cat.addQuery(queryBean);
 	}
 
 	public CategoryBean getQueriesByCategory(String category) {
