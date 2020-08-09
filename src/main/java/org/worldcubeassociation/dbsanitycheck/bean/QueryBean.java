@@ -5,6 +5,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 public class QueryBean {
+	private String category;
 	private String topic;
 
 	// We do not consider the query value for equality

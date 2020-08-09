@@ -1,8 +1,6 @@
 package org.worldcubeassociation.dbsanitycheck.tasklet;
 
-import java.io.IOException;
 import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -11,14 +9,16 @@ import java.util.Map;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
+import org.springframework.batch.item.ParseException;
+import org.springframework.batch.item.UnexpectedInputException;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.worldcubeassociation.dbsanitycheck.bean.CategoryBean;
 import org.worldcubeassociation.dbsanitycheck.exception.SanityCheckException;
 import org.worldcubeassociation.dbsanitycheck.helper.QueryHelper;
+import org.worldcubeassociation.dbsanitycheck.reader.QueryReader;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -32,6 +32,9 @@ public class WrtSanityCheckTasklet implements Tasklet {
 
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
+	
+	@Autowired
+	private QueryReader queryReader;
 
 	private QueryHelper queryHelper = new QueryHelper();
 
@@ -40,8 +43,10 @@ public class WrtSanityCheckTasklet implements Tasklet {
 
 	@Override
 	public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext)
-			throws DataAccessException, IOException, SQLException, SanityCheckException {
-
+			throws UnexpectedInputException, ParseException, Exception {
+		
+		log.info(""+queryReader.read());
+		
 		fillQueries();
 		log.info("{} queries found", queryHelper.size());
 
@@ -52,16 +57,7 @@ public class WrtSanityCheckTasklet implements Tasklet {
 	}
 
 	private void fillQueries() throws SanityCheckException {
-		// This method is intended to be easily maintainable also by people with no java
-		// skills
-		String category;
-		String topic;
-		String query;
 		
-		category = "Person data irregularities";
-		topic = "N1. Names with numbers";
-		query = "SELECT * FROM Persons WHERE name REGEXP '[0-9]'";
-		queryHelper.add(category, topic, query);
 		
 	}
 

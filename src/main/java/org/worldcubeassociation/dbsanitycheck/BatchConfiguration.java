@@ -28,14 +28,14 @@ public class BatchConfiguration {
 	private WrtSanityCheckTasklet wrtSanityCheckTasklet;
 
 	@Bean
-	public Job downloadDatabaseExport() {
+	public Job wrtSanityCheck() {
 
-		return jobBuilderFactory.get("handleDatabaseExport").start(wrtSanityCheck()).incrementer(new RunIdIncrementer())
+		return jobBuilderFactory.get("handleDatabaseExport").start(sanityCheck()).incrementer(new RunIdIncrementer())
 				.build();
 	}
 
 	@Bean
-	public Step wrtSanityCheck() {
+	public Step sanityCheck() {
 		return stepBuilderFactory.get("wrtSanityCheck").tasklet(wrtSanityCheckTasklet).build();
 	}
 
