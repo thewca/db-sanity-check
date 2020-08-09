@@ -26,7 +26,7 @@ public class QueryReader {
 	private String delimiter;
 
 	public List<QueryBean> read() throws UnexpectedInputException, ParseException, Exception {
-		ClassPathResource queriesFile = new ClassPathResource("queries.csv");
+		ClassPathResource queriesFile = new ClassPathResource("queries.tsv");
 
 		log.info("Read from file {}", queriesFile);
 

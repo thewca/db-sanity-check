@@ -21,10 +21,6 @@ import org.worldcubeassociation.dbsanitycheck.helper.QueryHelper;
 
 import lombok.extern.slf4j.Slf4j;
 
-// All the topics and queries here were provided by the WRT
-
-// TODO consider false positives
-
 @Slf4j
 @Component
 public class WrtSanityCheckTasklet implements Tasklet {
@@ -47,7 +43,7 @@ public class WrtSanityCheckTasklet implements Tasklet {
 
 		executeQueries();
 		showResults();
-		
+
 		log.info("All queries executed");
 
 		return RepeatStatus.FINISHED;
