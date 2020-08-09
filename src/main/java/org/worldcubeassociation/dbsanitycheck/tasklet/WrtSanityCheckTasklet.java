@@ -47,6 +47,8 @@ public class WrtSanityCheckTasklet implements Tasklet {
 
 		executeQueries();
 		showResults();
+		
+		log.info("All queries executed");
 
 		return RepeatStatus.FINISHED;
 	}

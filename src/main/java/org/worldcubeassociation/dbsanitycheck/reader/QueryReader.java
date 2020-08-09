@@ -11,6 +11,7 @@ import org.springframework.batch.item.file.mapping.DefaultLineMapper;
 import org.springframework.batch.item.file.mapping.FieldSetMapper;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
 import org.springframework.batch.item.file.transform.FieldSet;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 import org.worldcubeassociation.dbsanitycheck.bean.QueryBean;
@@ -21,17 +22,20 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class QueryReader {
 
+	@Value("${job.queryreader.delimiter}")
+	private String delimiter;
+
 	public List<QueryBean> read() throws UnexpectedInputException, ParseException, Exception {
 		ClassPathResource queriesFile = new ClassPathResource("queries.csv");
-		
-		log.info("Read from file {}", queriesFile.getPath());
-		
+
+		log.info("Read from file {}", queriesFile.getFile().getAbsolutePath());
+
 		FlatFileItemReader<QueryBean> itemReader = new FlatFileItemReader<>();
 		itemReader.setResource(queriesFile);
-		
+
 		// Comma as default
 		DefaultLineMapper<QueryBean> lineMapper = new DefaultLineMapper<>();
-		lineMapper.setLineTokenizer(new DelimitedLineTokenizer());
+		lineMapper.setLineTokenizer(new DelimitedLineTokenizer(delimiter));
 		lineMapper.setFieldSetMapper(new QueryBeanFieldSetMapper());
 		itemReader.setLineMapper(lineMapper);
 		itemReader.open(new ExecutionContext());
@@ -45,7 +49,7 @@ public class QueryReader {
 
 			queries.add(query);
 		}
-		
+
 		log.info("Found {} queries", queries.size());
 
 		return queries;
