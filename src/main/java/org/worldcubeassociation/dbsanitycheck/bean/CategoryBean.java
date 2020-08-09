@@ -24,7 +24,8 @@ public class CategoryBean {
 		if (queries.contains(queryBean)) {
 			throw new SanityCheckException(String.format("Topic %s already exists.", topic));
 		}
-
+		
+		queries.add(queryBean);
 	}
 
 	public int size() {

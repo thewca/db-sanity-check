@@ -16,9 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.worldcubeassociation.dbsanitycheck.bean.CategoryBean;
-import org.worldcubeassociation.dbsanitycheck.exception.SanityCheckException;
+import org.worldcubeassociation.dbsanitycheck.bean.QueryBean;
 import org.worldcubeassociation.dbsanitycheck.helper.QueryHelper;
-import org.worldcubeassociation.dbsanitycheck.reader.QueryReader;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -32,23 +31,19 @@ public class WrtSanityCheckTasklet implements Tasklet {
 
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
-	
-	@Autowired
-	private QueryReader queryReader;
 
-	private QueryHelper queryHelper = new QueryHelper();
+	@Autowired
+	private QueryHelper queryHelper;
 
 	// Hold category, topic and result
-	private Map<String, List<String>> map = new HashMap<>();
+	private Map<String, List<String>> analysis = new HashMap<>();
 
 	@Override
 	public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext)
 			throws UnexpectedInputException, ParseException, Exception {
-		
-		log.info(""+queryReader.read());
-		
-		fillQueries();
-		log.info("{} queries found", queryHelper.size());
+
+		// Read queryes
+		queryHelper.read();
 
 		executeQueries();
 		showResults();
@@ -56,39 +51,31 @@ public class WrtSanityCheckTasklet implements Tasklet {
 		return RepeatStatus.FINISHED;
 	}
 
-	private void fillQueries() throws SanityCheckException {
-		
-		
-	}
-
 	private void executeQueries() {
 		log.info("Execute queries");
 
-		 queryHelper.getCategories().keySet().forEach(cat -> {
-			 log.info(" ========== Category = {} ========== ", cat);
-			 
-			 CategoryBean category = queryHelper.getQueriesByCategory(cat);
-			 
-			 category.getQueries().forEach(queryBean -> {
-				 String topic = queryBean.getTopic();
-				 String query = queryBean.getQuery();
-				 log.info(" ===== Topic = {} ===== ", topic);
-				 log.info("Query = {}", query);
+		queryHelper.getCategories().keySet().forEach(cat -> {
+			log.info(" ========== Category = {} ========== ", cat);
 
-				 generalAnalysis(topic, query);
-			 });
-		 });
+			CategoryBean category = queryHelper.getQueriesByCategory(cat);
+
+			category.getQueries().forEach(queryBean -> generalAnalysis(queryBean));
+		});
 	}
 
 	/**
 	 * A general purpose analysis. If the query returns any value, it will be added
-	 * to the map
+	 * to the result
 	 * 
 	 * @param topic defines the current operation
 	 * @param query is the sql query
 	 */
-	private void generalAnalysis(String topic, String query) {
-		log.info("=== " + topic + " ===");
+	private void generalAnalysis(QueryBean queryBean) {
+		String category = queryBean.getCategory();
+		String topic = queryBean.getTopic();
+		String query = queryBean.getQuery();
+
+		log.info(" ===== " + topic + " ===== ");
 		log.info(query);
 
 		List<String> result = jdbcTemplate.query(query, (rs, rowNum) -> {
@@ -107,14 +94,14 @@ public class WrtSanityCheckTasklet implements Tasklet {
 
 		if (!result.isEmpty()) {
 			log.info("Found {} results for {}", result.size(), topic);
-			map.put(topic, result);
+			analysis.put(String.format("Category = %s, topic = %s", category, topic), result);
 		}
 	}
 
 	private void showResults() {
-		for (String key : map.keySet()) {
+		for (String key : analysis.keySet()) {
 			log.warn("Inconsistency in the topic " + key);
-			for (String result : map.get(key)) {
+			for (String result : analysis.get(key)) {
 				log.info(result);
 			}
 		}

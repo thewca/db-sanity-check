@@ -1,23 +1,47 @@
 package org.worldcubeassociation.dbsanitycheck.helper;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import org.springframework.batch.item.ParseException;
+import org.springframework.batch.item.UnexpectedInputException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.worldcubeassociation.dbsanitycheck.bean.CategoryBean;
+import org.worldcubeassociation.dbsanitycheck.bean.QueryBean;
 import org.worldcubeassociation.dbsanitycheck.exception.SanityCheckException;
+import org.worldcubeassociation.dbsanitycheck.reader.QueryReader;
 
-import lombok.Data;
+import lombok.Getter;
 
-@Data
+@Component
 public class QueryHelper {
-	private Map<String, CategoryBean> categories = new HashMap<>();
+	@Autowired
+	private QueryReader queryReader;
 
-	public void add(String category, String topic, String query) throws SanityCheckException {
+	@Getter
+	private Map<String, CategoryBean> categories = new HashMap<>();
+	private int numberOfQueries = 0;
+	
+	public void read() throws UnexpectedInputException, ParseException, Exception {
+		List<QueryBean> queries = queryReader.read();
+		for (QueryBean query : queries) {
+			numberOfQueries++;
+			add(query);
+		}
+	}
+	
+	private void add(QueryBean queryBean) throws SanityCheckException {
+		String category = queryBean.getCategory();
+		String topic = queryBean.getTopic();
+		String query = queryBean.getQuery();
+		
 		validateParam("Category", category);
 		validateParam("Topic", topic);
 		validateParam("Query", query);
 
-		CategoryBean cat = categories.getOrDefault(category, new CategoryBean(topic));
+		CategoryBean cat = categories.computeIfAbsent(category, s -> new CategoryBean(category));
 		cat.addQuery(topic, query);
 	}
 
@@ -26,11 +50,7 @@ public class QueryHelper {
 	}
 
 	public int size() {
-		int result = 0;
-		for (String cat : categories.keySet()) {
-			result += categories.get(cat).size();
-		}
-		return result;
+		return numberOfQueries;
 	}
 
 	private void validateParam(String name, String value) throws SanityCheckException {
