@@ -13,6 +13,7 @@ import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
 import org.springframework.batch.item.file.transform.FieldSet;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.stereotype.Component;
 import org.worldcubeassociation.dbsanitycheck.bean.QueryBean;
 
@@ -26,7 +27,7 @@ public class QueryReader {
 	private String delimiter;
 
 	public List<QueryBean> read() throws UnexpectedInputException, ParseException, Exception {
-		ClassPathResource queriesFile = new ClassPathResource("queries.tsv");
+		FileSystemResource queriesFile = new FileSystemResource("queries.tsv");
 
 		log.info("Read from file {}", queriesFile);
 
@@ -39,6 +40,9 @@ public class QueryReader {
 		lineMapper.setFieldSetMapper(new QueryBeanFieldSetMapper());
 		itemReader.setLineMapper(lineMapper);
 		itemReader.open(new ExecutionContext());
+		
+		// Header
+		itemReader.read();
 
 		List<QueryBean> queries = new ArrayList<>();
 		while (true) {

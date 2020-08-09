@@ -1,3 +1,4 @@
+Category	Topic	Query
 Person data irregularities	N1. Names with numbers	SELECT * FROM Persons WHERE name REGEXP '[0-9]'
 Person data irregularities	N2. Lowercase first names	SELECT * FROM Persons WHERE BINARY name REGEXP '^[a-z]'
 Person data irregularities	N3. Lowercase last names (without local name)	SELECT * FROM Persons WHERE BINARY MID(REVERSE(name), LOCATE(' ', REVERSE(name))-1,1) <> UPPER(MID(REVERSE(name), LOCATE(' ', REVERSE(name))-1,1))
