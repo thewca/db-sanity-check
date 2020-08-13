@@ -1,21 +1,17 @@
 package org.worldcubeassociation.dbsanitycheck.reader;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Scanner;
 
-import org.springframework.batch.item.ExecutionContext;
-import org.springframework.batch.item.ParseException;
-import org.springframework.batch.item.UnexpectedInputException;
-import org.springframework.batch.item.file.FlatFileItemReader;
-import org.springframework.batch.item.file.mapping.DefaultLineMapper;
-import org.springframework.batch.item.file.mapping.FieldSetMapper;
-import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
-import org.springframework.batch.item.file.transform.FieldSet;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.stereotype.Component;
 import org.worldcubeassociation.dbsanitycheck.bean.QueryBean;
+import org.worldcubeassociation.dbsanitycheck.exception.SanityCheckException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -23,53 +19,41 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class QueryReader {
 
-	@Value("${job.queryreader.delimiter}")
-	private String delimiter;
+	@Value("${job.queryreader.filename}")
+	private String filename;
 
-	public List<QueryBean> read() throws UnexpectedInputException, ParseException, Exception {
-		FileSystemResource queriesFile = new FileSystemResource("queries.tsv");
+	public List<QueryBean> read() throws FileNotFoundException, SanityCheckException {
+		log.info("Read file");
 
-		log.info("Read from file {}", queriesFile);
+		List<QueryBean> result = new ArrayList<>();
 
-		FlatFileItemReader<QueryBean> itemReader = new FlatFileItemReader<>();
-		itemReader.setResource(queriesFile);
+		InputStream is = new FileInputStream(filename);
+		try (Scanner scan = new Scanner(is)) {
+			scan.useDelimiter("(\n){2,}");
 
-		// Comma as default
-		DefaultLineMapper<QueryBean> lineMapper = new DefaultLineMapper<>();
-		lineMapper.setLineTokenizer(new DelimitedLineTokenizer(delimiter));
-		lineMapper.setFieldSetMapper(new QueryBeanFieldSetMapper());
-		itemReader.setLineMapper(lineMapper);
-		itemReader.open(new ExecutionContext());
-		
-		// Header
-		itemReader.read();
+			while (scan.hasNext()) {
+				String group = scan.next().trim();
+				String[] split = group.split("\n");
 
-		List<QueryBean> queries = new ArrayList<>();
-		while (true) {
-			QueryBean query = itemReader.read();
-			if (query == null) {
-				break;
+				if (split.length < 3) {
+					throw new SanityCheckException(
+							String.format("Expected group length is at least 3 lines.%n%s", group));
+				}
+
+				String category = split[0];
+				String topic = split[1];
+				String query = String.join("\n", Arrays.copyOfRange(split, 2, split.length));
+
+				QueryBean queryBean = new QueryBean();
+				queryBean.setCategory(category);
+				queryBean.setTopic(topic);
+				queryBean.setQuery(query);
+
+				result.add(queryBean);
 			}
-
-			queries.add(query);
 		}
+		log.info("Found {} queries", result.size());
 
-		log.info("Found {} queries", queries.size());
-
-		return queries;
-
+		return result;
 	}
-
-	private static class QueryBeanFieldSetMapper implements FieldSetMapper<QueryBean> {
-		public QueryBean mapFieldSet(FieldSet fieldSet) {
-			QueryBean query = new QueryBean();
-
-			query.setCategory(fieldSet.readString(0));
-			query.setTopic(fieldSet.readString(1));
-			query.setQuery(fieldSet.readString(2));
-
-			return query;
-		}
-	}
-
 }

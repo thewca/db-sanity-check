@@ -91,7 +91,7 @@ public class WrtSanityCheckTasklet implements Tasklet {
 		});
 
 		if (!result.isEmpty()) {
-			log.info("Found {} results for {}", result.size(), topic);
+			log.info("* Found {} results for {}", result.size(), topic);
 			analysis.put(String.format("Category = %s, topic = %s", category, topic), result);
 		}
 	}

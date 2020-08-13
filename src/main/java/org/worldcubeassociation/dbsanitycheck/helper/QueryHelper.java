@@ -23,7 +23,7 @@ public class QueryHelper {
 	@Getter
 	private Map<String, CategoryBean> categories = new HashMap<>();
 	private int numberOfQueries = 0;
-	
+
 	public void read() throws UnexpectedInputException, ParseException, Exception {
 		List<QueryBean> queries = queryReader.read();
 		for (QueryBean query : queries) {
@@ -31,12 +31,12 @@ public class QueryHelper {
 			add(query);
 		}
 	}
-	
+
 	private void add(QueryBean queryBean) throws SanityCheckException {
 		String category = queryBean.getCategory();
 		String topic = queryBean.getTopic();
 		String query = queryBean.getQuery();
-		
+
 		validateParam("Category", category);
 		validateParam("Topic", topic);
 		validateParam("Query", query);
