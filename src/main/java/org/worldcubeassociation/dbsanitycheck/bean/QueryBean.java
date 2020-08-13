@@ -1,15 +1,45 @@
 package org.worldcubeassociation.dbsanitycheck.bean;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
-@Data
+@Getter
+@Setter
+@ToString
 public class QueryBean {
 	private String category;
 	private String topic;
-
-	// We do not consider the query value for equality
-	// This helps asserting a query does not exists before inserting
-	@EqualsAndHashCode.Exclude
 	private String query;
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == null) {
+			return false;
+		}
+		
+		if (obj.getClass() != this.getClass()) {
+            return false;
+        }
+		
+		final QueryBean other = (QueryBean) obj;
+		
+		// First, we compare category and topic
+		if (other.getCategory() == null || other.getTopic() == null) {
+			return false;
+		}
+		
+		// If they match, returns true
+		if (other.getCategory().equals(category) && other.getTopic().equals(topic)) {
+			return true;
+		}
+		
+		// Then we compare sql query
+		if (other.getQuery() == null) {
+			return false;
+		}
+		
+		return other.getQuery().equals(query);
+
+	}
 }
