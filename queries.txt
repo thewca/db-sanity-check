@@ -45,3 +45,358 @@ SELECT * FROM Persons WHERE year>0 AND (year < 1920 OR year >= 2017)
 Person data irregularities
 D2. Missing DOCs at scale (competitions after 2018 with at least 3 missing DOBs)
 SELECT competitionId, count(distinct personId) as missingDOBs FROM Results INNER JOIN Persons ON Results.personId=Persons.id WHERE Persons.year=0 AND RIGHT(competitionId,4) > 2018 GROUP BY competitionId HAVING missingDOBs >= 3 ORDER BY missingDOBs DESC
+
+Irregular results
+1. Results with empty first solve:
+SELECT * FROM Results WHERE value1=0
+
+Irregular results
+2. Wrong number of results (for non-combined rounds):
+SELECT * FROM Results as r INNER JOIN Formats as f ON r.formatId = f.id 
+WHERE r.roundTypeId not in ('c', 'd', 'e', 'g', 'h')
+AND f.expected_solve_count <> IF(value1<>0,1,0) + IF(value2<>0,1,0) + IF(value3<>0,1,0) + IF(value4<>0,1,0) + IF(value5<>0,1,0)
+
+Irregular results
+3. Rounds with more than two (rounds with cutoff) / one (rounds without cutoff) different numbers of results (competitions with year >= 2013):
+SELECT competitionId, eventId, roundTypeId, COUNT(solves) as num_results
+FROM (SELECT DISTINCT competitionId, eventId, roundTypeId, IF(value1<>0,1,0) 
+ + IF(value2<>0,1,0) + IF(value3<>0,1,0) + IF(value4<>0,1,0) + IF(value5<>0,1,0) as solves
+FROM Results WHERE RIGHT(competitionId, 4) >= 2013) re
+GROUP BY competitionId, eventId, roundTypeId 
+HAVING IF(roundTypeId in ('c', 'd', 'e', 'g', 'h'), num_results > 2, num_results > 1)
+ORDER BY competitionId
+
+Irregular results
+5. Only DNS or zero results:
+SELECT * FROM Results WHERE ABS(1+value1)=1 AND ABS(1+value2)=1 AND ABS(1+value3)=1 AND ABS(1+value4)=1 AND ABS(1+value5)=1
+
+Irregular results
+6. Non-zero average for rows with <= 2 attempt:
+SELECT * FROM Results WHERE average <> 0 AND IF(value1<>0,1,0) + IF(value2<>0,1,0) + IF(value3<>0,1,0) + IF(value4<>0,1,0) + IF(value5<>0,1,0) <= 2
+
+Duplicate results
+1. Rows with at least two identical >0 results at one competition (ignoring 333fm, 333mbo):
+SELECT value1, value2, value3, value4, value5, GROUP_CONCAT(distinct eventId) as events, GROUP_CONCAT(distinct personId) as people, GROUP_CONCAT(distinct competitionId), count(*) as amount FROM Results
+WHERE IF(value1>0,1,0) + IF(value2>0,1,0) + IF(value3>0,1,0) + IF(value4>0,1,0) + IF(value5>0,1,0) > 1 AND eventId not in ('333mbo', '333fm')
+GROUP BY value1, value2, value3, value4, value5 HAVING amount > 1 AND count(distinct competitionId) = 1 ORDER BY amount DESC
+
+WCA-ID irregularities
+1. WCA-ID year is not the start year of the profiles first competition:
+SELECT r.personId, MIN(c.year) as first_year
+FROM Results r INNER JOIN Competitions c ON r.competitionId=c.id
+GROUP BY personID HAVING first_year <> LEFT(personId,4)
+
+Duplicate scrambles
+1. Duplicates within scrambles for one competitionId:
+SELECT GROUP_CONCAT(distinct competitionId) as competitions, 
+        GROUP_CONCAT(distinct eventId) AS events, 
+    GROUP_CONCAT(distinct roundTypeId) AS roundTypeIds, 
+    GROUP_CONCAT(distinct groupId) AS groupIds, scramble, 
+    count(scrambleId) AS scount, GROUP_CONCAT(scrambleId) AS scramleIds
+FROM (SELECT dups.scramble, scrambleId, competitionId, eventId, roundTypeId, groupId
+        FROM (SELECT scramble FROM Scrambles 
+              WHERE eventId not in ('222', 'skewb') 
+              GROUP BY scramble HAVING count(*) > 1) dups
+        INNER JOIN Scrambles
+                ON dups.scramble = Scrambles.scramble) t
+GROUP BY scramble HAVING count(distinct competitionId) = 1
+ORDER BY competitions, events, roundTypeIds, groupIds
+
+Duplicate scrambles
+2. Duplicates across multiple competitions (ignoring 222 and skewb):
+SELECT GROUP_CONCAT(distinct competitionId) as competitions, 
+	GROUP_CONCAT(distinct eventId) AS events, 
+    GROUP_CONCAT(distinct roundTypeId) AS roundTypeIds, 
+    GROUP_CONCAT(distinct groupId) AS groupIds, scramble, 
+    count(scrambleId) AS scount, GROUP_CONCAT(scrambleId) AS scramleIds
+FROM (SELECT dups.scramble, scrambleId, competitionId, eventId, roundTypeId, groupId
+        FROM (SELECT scramble FROM Scrambles 
+              WHERE eventId not in ('222', 'skewb') 
+              GROUP BY scramble HAVING count(*) > 1) dups
+        INNER JOIN Scrambles
+                ON dups.scramble = Scrambles.scramble) t
+GROUP BY scramble HAVING count(distinct competitionId) > 1
+ORDER BY competitions, events, roundTypeIds, groupIds
+
+Invalid scrambles
+1. Invalid groupIds:
+SELECT distinct groupId FROM Scrambles 
+WHERE CAST(groupId AS BINARY) NOT REGEXP '^[A-Z]+$'
+
+Invalid scrambles
+2. Scrambles with leading or trailing spaces:
+SELECT * FROM Scrambles WHERE LENGTH(scramble) != LENGTH(TRIM(scramble))
+
+Invalid scrambles
+3. Wrong number of scrambles:
+SELECT c.start_date, s.competitionId, s.eventId, s.roundTypeId, s.groupId, 
+        s.scramble_num, r.formatId, f.expected_solve_count
+FROM (SELECT competitionId, eventId, roundTypeId, groupId, 
+      count(*) as scramble_num 
+      FROM Scrambles WHERE isExtra=0
+      GROUP BY competitionId, eventId, roundTypeId, groupId) AS s 
+INNER JOIN (SELECT distinct competitionId, roundTypeId, formatId, eventId FROM Results) AS r 
+ON s.competitionId = r.competitionId AND s.roundTypeId = r.roundTypeId AND s.eventid = r.eventId 
+INNER JOIN Formats as f ON r.formatId = f.id
+INNER JOIN Competitions as c ON s.competitionId = c.id
+WHERE scramble_num <> f.expected_solve_count 
+ORDER BY start_date DESC
+
+Competition data irregularities
+1. Lowercase competitionIds
+SELECT id FROM Competitions 
+WHERE announced_at is not NULL and BINARY id REGEXP '^[a-z]'
+
+Competition data irregularities
+2. competitionIds not ending with year (or endYear):
+SELECT id, start_date, end_date FROM Competitions 
+WHERE announced_at is not NULL AND RIGHT(id,4) <> year AND RIGHT(id,4) <> endYear
+
+Competition data irregularities
+3. Non-public Results (incomplete posting)
+SELECT id FROM Competitions 
+WHERE results_posted_by IS NULL AND announced_at IS NOT NULL 
+AND id IN (SELECT competitionId FROM Results)
+
+User data irregularities
+1. Non-existing claimed WCA-IDs:
+SELECT * FROM users where wca_id not in (SELECT id FROM Persons)
+
+User data irregularities
+2. Inconsistent name in users table:
+SELECT p.id, p.name as profile_name, u.name as account_name FROM Persons p 
+INNER JOIN users u ON p.id=u.wca_id AND p.name<>u.name AND p.subId=1
+
+Suspicious rounds data
+1. Time limit > cutoff
+SELECT ce.competition_id, ce.event_id, CONVERT(MID(ro.time_limit, 17, 10), UNSIGNED INTEGER) time_limit, CONVERT(MID(ro.cutoff, 39, 10), UNSIGNED INTEGER) cutoff
+FROM rounds as ro INNER JOIN competition_events as ce on ce.id = ro.competition_event_id
+WHERE time_limit is not NULL and ro.cutoff is not NULL
+HAVING time_limit> 0 and time_limit < cutoff
+
+Suspicious rounds data
+2. Cutoff < 5 seconds:
+SELECT ce.competition_id, ce.event_id, CONVERT(MID(ro.cutoff, 39, 10), UNSIGNED INTEGER) cutoff
+FROM rounds as ro INNER JOIN competition_events as ce on ce.id = ro.competition_event_id
+WHERE ro.cutoff is not NULL and ce.event_id <> '333fm' 
+HAVING cutoff < 500
+
+Suspicious rounds data
+3. Cutoff > 10 minutes:
+SELECT ce.competition_id, ce.event_id, CONVERT(MID(ro.cutoff, 39, 10), UNSIGNED INTEGER) cutoff
+FROM rounds as ro INNER JOIN competition_events as ce on ce.id = ro.competition_event_id
+WHERE ro.cutoff is not NULL and ce.event_id <> '333mbf'
+HAVING cutoff > 60000
+
+Suspicious rounds data
+4. Time limit < 10 seconds:
+SELECT ce.competition_id, ce.event_id, CONVERT(MID(ro.time_limit, 17, 10), UNSIGNED INTEGER) time_limit
+FROM rounds as ro INNER JOIN competition_events as ce on ce.id = ro.competition_event_id
+WHERE time_limit is not NULL
+HAVING time_limit> 0 and time_limit < 1000
+
+Suspicious rounds data
+5. Time limit > 10 minutes for ""fast events"":
+SELECT ce.competition_id, ce.event_id, CONVERT(MID(ro.time_limit, 17, 10), UNSIGNED INTEGER) time_limit
+FROM rounds as ro INNER JOIN competition_events as ce on ce.id = ro.competition_event_id
+WHERE time_limit is not NULL and ce.event_id in ('333', '222', '444', '333oh', 'clock', 'mega', 'pyram', 'skewb', 'sq1') HAVING time_limit> 60000
+
+Consistency of Results & Persons
+1. Persons table entries without Results table entry:
+SELECT * FROM Persons WHERE id NOT IN (SELECT personId FROM Results)
+
+Consistency of Results & Persons
+2. Results table entries without Persons table entry:
+SELECT * FROM Results WHERE personId NOT IN (SELECT id FROM Persons)
+
+Consistency of Results & Scrambles
+1. Round in Scrambles with no results (but with competitionId in Results):
+SELECT distinct s.competitionId, s.eventId, s.roundTypeId 
+FROM (SELECT distinct competitionId, eventId, roundTypeId FROM Scrambles) as s 
+LEFT JOIN (SELECT distinct competitionId FROM Results) as r_comps
+ON s.competitionId = r_comps.competitionId
+LEFT JOIN (SELECT distinct competitionId, eventId, roundTypeId FROM Results) as r_rounds
+ON s.competitionId = r_rounds.competitionId AND s.eventId = r_rounds.eventId
+	AND s.roundTypeId = r_rounds.roundTypeId
+WHERE r_comps.competitionId is not NULL AND r_rounds.competitionId is NULL
+ORDER BY s.competitionId, s.eventId, s.roundTypeId
+
+Consistency of Results & Scrambles
+2. Rounds with results but no scrambles (but with competitionId in Scrambles)
+SELECT distinct r.competitionId, r.eventId, r.roundTypeId 
+FROM (SELECT distinct competitionId, eventId, roundTypeId FROM Results) as r 
+LEFT JOIN (SELECT distinct competitionId FROM Scrambles) as s_comps
+ON r.competitionId = s_comps.competitionId
+LEFT JOIN (SELECT distinct competitionId, eventId, roundTypeId FROM Scrambles) as s_rounds
+ON r.competitionId = s_rounds.competitionId AND r.eventId = s_rounds.eventId
+        AND r.roundTypeId = s_rounds.roundTypeId
+WHERE s_comps.competitionId is not NULL AND s_rounds.competitionId is NULL
+ORDER BY r.competitionId, r.eventId, r.roundTypeId
+
+Consistency of Results& rounds data
+1. Events missing from competition_events
+SELECT DISTINCT ce.id, competitionId, eventId FROM Results r
+LEFT JOIN competition_events ce ON r.competitionId=ce.competition_id AND r.eventId=ce.event_id
+HAVING ce.id is NULL
+
+Consistency of Results& rounds data
+2. Unmatching number of events between Results and competition_events
+SELECT competitionId, IFNULL(ce_number_of_events, 0) ce_number_of_events, results_number_of_events 
+FROM (SELECT competition_id, COUNT(*) ce_number_of_events
+        FROM competition_events GROUP BY competition_id) cee
+RIGHT JOIN (SELECT competitionId, COUNT(DISTINCT eventId) results_number_of_events 
+            FROM Results GROUP BY competitionId) re 
+ON cee.competition_id=re.competitionId
+HAVING ce_number_of_events<>results_number_of_events
+
+Consistency of Results& rounds data
+3. No rounds marked for events
+SELECT ce.id, ce.competition_id, ce.event_id, ro.id FROM competition_events ce
+LEFT JOIN rounds ro ON ce.id=ro.competition_event_id
+JOIN Competitions c ON ce.competition_id=c.id
+WHERE confirmed_at is NOT NULL AND cancelled_by is not NULL
+HAVING ro.id is NULL
+
+Consistency of Results& rounds data
+4. Unmatching number of rounds between Results and rounds
+SELECT distinct RIGHT(competition_id, 4) as year, competition_id, event_id, rounds_rounds, 
+        result_rounds, id_list, IF(rounds_rounds < result_rounds, 'rounds entry missing', 
+                                                        'excessive rounds entry') as problem_case 
+FROM competition_events as ce 
+INNER JOIN (SELECT competition_event_id, count(*) as rounds_rounds FROM rounds
+            GROUP BY competition_event_id) as ro 
+ON ce.id=ro.competition_event_id
+INNER JOIN (SELECT competitionId, eventId, count(*) as result_rounds,
+        GROUP_CONCAT(roundTypeId ORDER BY roundTypeId SEPARATOR ', ') as id_list
+    FROM (SELECT distinct competitionId, eventId, roundTypeId FROM Results) t
+    GROUP BY competitionId, eventId) as res
+ON ce.competition_id=res.competitionId AND ce.event_id=res.eventId
+    AND rounds_rounds <> result_rounds
+ORDER BY year, problem_case, competition_id, event_id
+
+Consistency of Results& rounds data
+5. Format mismatches between Results and rounds
+SELECT ce.competition_id, ce.event_id, re.roundTypeId, re.formatId, ro.id, ro.format_id
+FROM rounds ro
+INNER JOIN competition_events ce ON ce.id = ro.competition_event_id
+INNER JOIN (SELECT DISTINCT competitionId, eventId, roundTypeId, formatId FROM Results) re 
+ON re.competitionId = ce.competition_id AND re.eventId = ce.event_id AND 
+  (CASE ro.number WHEN ro.total_number_of_rounds THEN re.roundTypeId IN ('c', 'f')
+   WHEN 0 THEN re.roundTypeId IN ('0', 'b', 'h') WHEN 1 THEN re.roundTypeId IN ('1', 'd') 
+   WHEN 2 THEN re.roundTypeId IN ('2', 'e') WHEN 3 THEN re.roundTypeId IN ('3', 'g') END)
+WHERE re.formatId <> ro.format_id
+
+Consistency of Results& rounds data
+6. Inconsistent scramble counts in Scrambles table and rounds table
+SELECT ce.competition_id, ce.event_id, ro.number, ro.scramble_set_count as roundsScrambleCount, 
+  ScramblesScrambleCount
+FROM rounds ro
+INNER JOIN competition_events ce ON ce.id = ro.competition_event_id
+INNER JOIN (SELECT competitionId, eventId, roundTypeId, COUNT(*) as ScramblesScrambleCount
+        FROM (SELECT DISTINCT competitionId, eventId, roundTypeId, groupId FROM Scrambles) t
+        GROUP BY competitionId, eventId, roundTypeId) sc
+ON sc.competitionId = ce.competition_id AND sc.eventId = ce.event_id AND 
+  (CASE ro.number WHEN ro.total_number_of_rounds THEN sc.roundTypeId IN ('c', 'f')
+   WHEN 0 THEN sc.roundTypeId IN ('0', 'b', 'h') WHEN 1 THEN sc.roundTypeId IN ('1', 'd') 
+   WHEN 2 THEN sc.roundTypeId IN ('2', 'e') WHEN 3 THEN sc.roundTypeId IN ('3', 'g') END)
+WHERE ro.scramble_set_count <> ScramblesScrambleCount
+
+Consistency of Results& rounds data
+7. Non-cutoff roundTypeIds with cutoffs in schedule
+SELECT distinct RIGHT(competition_id, 4) as year, ce.competition_id, ce.event_id, 
+re.roundTypeId, ro.number as round_number, ro.cutoff 
+FROM rounds ro INNER JOIN competition_events ce ON ce.id = ro.competition_event_id
+INNER JOIN (SELECT DISTINCT competitionId, eventId, roundTypeId FROM Results) re 
+ON re.competitionId = ce.competition_id AND re.eventId = ce.event_id AND 
+  (CASE ro.number WHEN ro.total_number_of_rounds THEN re.roundTypeId IN ('c', 'f')
+   WHEN 0 THEN re.roundTypeId IN ('0', 'b', 'h') WHEN 1 THEN re.roundTypeId IN ('1', 'd') 
+   WHEN 2 THEN re.roundTypeId IN ('2', 'e') WHEN 3 THEN re.roundTypeId IN ('3', 'g') END)
+WHERE roundTypeId not in ('c', 'd', 'e', 'g', 'h') AND cutoff is not NULL
+ORDER BY year, competition_id, event_id, round_number
+
+Consistency of Results& rounds data
+8. Cutoff roundTypeIds with NULL cutoff
+SELECT distinct RIGHT(competition_id, 4) as year, ce.competition_id, ce.event_id, 
+re.roundTypeId, ro.number as round_number, ro.cutoff 
+FROM rounds ro INNER JOIN competition_events ce ON ce.id = ro.competition_event_id
+INNER JOIN (SELECT DISTINCT competitionId, eventId, roundTypeId FROM Results) re 
+ON re.competitionId = ce.competition_id AND re.eventId = ce.event_id AND 
+  (CASE ro.number WHEN ro.total_number_of_rounds THEN re.roundTypeId IN ('c', 'f')
+   WHEN 0 THEN re.roundTypeId IN ('0', 'b', 'h') WHEN 1 THEN re.roundTypeId IN ('1', 'd') 
+   WHEN 2 THEN re.roundTypeId IN ('2', 'e') WHEN 3 THEN re.roundTypeId IN ('3', 'g') END)
+WHERE roundTypeId in ('c', 'd', 'e', 'g', 'h') AND cutoff is NULL
+ORDER BY year, competition_id, event_id, round_number
+
+Consistency of Results& rounds data
+9. Cutoff violations:
+SELECT RIGHT(competition_id, 4) AS year, 
+TRIM(TRAILING '}' FROM (REVERSE(SUBSTRING_INDEX(REVERSE(cutoff), ':', 1)))) AS attemptResult, 
+RIGHT(SUBSTRING_INDEX(cutoff, ',', 1), 1) AS numberOfAttempts, ro.cutoff, 
+ce.competition_id, ce.event_id, re.roundTypeId, r.formatId, r.pos, r.personId, r.personName, 
+r.value1, r.value2, r.value3, r.value4, r.value5, r.best, r.average
+FROM rounds ro
+INNER JOIN competition_events ce ON ce.id = ro.competition_event_id
+INNER JOIN (SELECT DISTINCT competitionId, eventId, roundTypeId FROM Results) re 
+ON re.competitionId = ce.competition_id AND re.eventId = ce.event_id AND 
+  (CASE ro.number WHEN ro.total_number_of_rounds THEN re.roundTypeId IN ('c', 'f')
+   WHEN 0 THEN re.roundTypeId IN ('0', 'b', 'h') WHEN 1 THEN re.roundTypeId IN ('1', 'd') 
+   WHEN 2 THEN re.roundTypeId IN ('2', 'e') WHEN 3 THEN re.roundTypeId IN ('3', 'g') END)
+JOIN Results r ON ce.competition_id=r.competitionId AND ce.event_id=r.eventId 
+  AND re.roundTypeId=r.roundTypeId
+HAVING 
+  IF(cutoff IS NULL, 
+     IF(formatId IN ('a', 'm'), 
+        IF(formatId='m', 
+           (value2=0 OR value3=0), 
+           (value2=0 OR value3=0 OR value4=0 OR value5=0)), 
+        (formatId=2 AND value2=0) OR (formatId=3 AND (value2=0 OR value3=0))), 
+     CASE WHEN numberOfAttempts=1 THEN (value1<attemptResult AND value1>=0 AND value2=0) OR 
+       ((value1>=attemptResult OR value1<0) AND (value2<>0 OR value3<>0 OR value4<>0 OR value5<>0)) 
+     WHEN numberOfAttempts=2 THEN (((value1<attemptResult AND value1>0) OR 
+       (value2<attemptResult AND value2>0)) AND value3=0) OR ((value1>=attemptResult OR value1<0) AND 
+         (value2>=attemptResult OR value2<0) AND (value3<>0 OR value4<>0 OR value5<>0)) 
+     WHEN numberOfAttempts=3 THEN (((value1<attemptResult AND value1>0) OR 
+       (value2<attemptResult AND value2>0) OR (value3<attemptResult AND value3>0)) AND value4=0) OR 
+       ((value1>=attemptResult OR value1<0) AND (value2>=attemptResult OR value2<0) AND 
+        (value3>=attemptResult OR value3<0) AND (value4<>0 OR value5<>0)) END 
+     OR formatId=1)
+
+Consistency of Results& rounds data
+10. Time limit violations within one round:
+SELECT ro.id, REVERSE(SUBSTRING_INDEX(REVERSE(SUBSTRING_INDEX(time_limit, ',', 1)), ':', 1)) AS timeLimit,
+IF(time_limit LIKE '%[]%', false, true) AS cumulative,
+IF(value1<0,0,value1)+IF(value2<0,0,value2)+IF(value3<0,0,value3)+IF(value4<0,0,value4)+IF(value5<0,0,value5) AS sumOfSolves,
+ce.competition_id, ce.event_id, re.roundTypeId, ro.time_limit, r.formatId, r.pos, r.personId, r.personName, 
+r.value1, r.value2, r.value3, r.value4, r.value5, r.best, r.average
+FROM rounds ro
+INNER JOIN competition_events ce ON ce.id = ro.competition_event_id
+INNER JOIN (SELECT DISTINCT competitionId, eventId, roundTypeId FROM Results
+           WHERE RIGHT(competitionId, 4) >= 2013) re 
+ON re.competitionId = ce.competition_id AND re.eventId = ce.event_id AND 
+  (CASE ro.number WHEN ro.total_number_of_rounds THEN re.roundTypeId IN ('c', 'f')
+   WHEN 0 THEN re.roundTypeId IN ('0', 'b', 'h') WHEN 1 THEN re.roundTypeId IN ('1', 'd') 
+   WHEN 2 THEN re.roundTypeId IN ('2', 'e') WHEN 3 THEN re.roundTypeId IN ('3', 'g') END)
+JOIN Results r ON ce.competition_id=r.competitionId AND ce.event_id=r.eventId AND re.roundTypeId=r.roundTypeId
+WHERE time_limit IS NOT NULL AND time_limit NOT LIKE '%[%,%]%'
+HAVING IF(time_limit LIKE '%[]%', value1>=timeLimit OR value2>=timeLimit OR value3>=timeLimit OR value4>=timeLimit OR value5>=timeLimit,
+          sumOfSolves>=timeLimit)
+
+Consistency of Results& rounds data
+11. Time limit violations over multiple rounds with shared time limit:
+SELECT ro.id, COUNT(*) AS noOfRounds, SUM(IF(value1<0,0,value1)+IF(value2<0,0,value2)+IF(value3<0,0,value3)+IF(value4<0,0,value4)+IF(value5<0,0,value5)) AS sumOfSolves,
+REVERSE(SUBSTRING_INDEX(REVERSE(SUBSTRING_INDEX(time_limit, ',', 1)), ':', 1)) AS timeLimit,
+ce.competition_id, ro.time_limit, r.personId, r.personName, r.countryId
+FROM rounds ro
+INNER JOIN competition_events ce ON ce.id = ro.competition_event_id
+INNER JOIN (SELECT DISTINCT competitionId, eventId, roundTypeId FROM Results
+           WHERE RIGHT(competitionId, 4) >= 2013) re  
+ON re.competitionId = ce.competition_id AND re.eventId = ce.event_id AND 
+  (CASE ro.number WHEN ro.total_number_of_rounds THEN re.roundTypeId IN ('c', 'f')
+   WHEN 0 THEN re.roundTypeId IN ('0', 'b', 'h') WHEN 1 THEN re.roundTypeId IN ('1', 'd') 
+   WHEN 2 THEN re.roundTypeId IN ('2', 'e') WHEN 3 THEN re.roundTypeId IN ('3', 'g') END)
+JOIN Results r ON ce.competition_id=r.competitionId AND ce.event_id=r.eventId AND re.roundTypeId=r.roundTypeId
+WHERE time_limit IS NOT NULL AND time_limit LIKE '%[%"""",""""%]%'
+GROUP BY personId, competition_id, time_limit
+HAVING sumOfSolves>=timeLimit
+
+
