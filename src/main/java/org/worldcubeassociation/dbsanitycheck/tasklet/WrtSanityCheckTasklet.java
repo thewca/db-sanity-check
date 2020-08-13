@@ -91,7 +91,7 @@ public class WrtSanityCheckTasklet implements Tasklet {
 			// The column count starts from 1
 			for (int i = 1; i <= columnCount; i++) {
 				String name = rsmd.getColumnName(i);
-				out.add(name + "=" + rs.getString(name));
+				out.add(name + "=" + rs.getString(i));
 			}
 			return String.join(",", out);
 		});
@@ -109,7 +109,6 @@ public class WrtSanityCheckTasklet implements Tasklet {
 				log.info(result);
 			}
 		}
-
 	}
 
 }
