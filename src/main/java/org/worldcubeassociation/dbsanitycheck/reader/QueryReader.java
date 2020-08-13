@@ -63,8 +63,9 @@ public class QueryReader {
 
 			// We make sure it is not duplicated. Categories should be organized.
 			if (consideredCategories.contains(category)) {
-				throw new SanityCheckException(
-						String.format("Categories should be placed together. Please check category %s.", category));
+				consideredCategories.add(category); // Just to log a help
+				throw new SanityCheckException(String
+						.format("Categories should be placed together. Categories found: %s.", consideredCategories));
 			}
 			consideredCategories.add(category);
 			prevCategory = category;
