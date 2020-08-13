@@ -47,8 +47,8 @@ public class QueryReader {
 				addQuery(result, split);
 			}
 		}
-		log.info("Found {} categories", consideredCategories.size());
-		log.info("Found {} queries", result.size());
+		log.info(String.format("Found %s categories", consideredCategories.size()));
+		log.info(String.format("Found %s queries", result.size()));
 
 		return result;
 	}
@@ -63,6 +63,7 @@ public class QueryReader {
 
 			// We make sure it is not duplicated. Categories should be organized.
 			if (consideredCategories.contains(category)) {
+				log.error("Categories not organized");
 				consideredCategories.add(category); // Just to log a help
 				throw new SanityCheckException(String
 						.format("Categories should be placed together. Categories found: %s.", consideredCategories));
@@ -77,6 +78,7 @@ public class QueryReader {
 		queryBean.setQuery(query);
 
 		if (result.indexOf(queryBean) >= 0) {
+			log.error("Repeated query");
 			throw new SanityCheckException(String
 					.format("Duplicated query (it could be same category + topic or the same sql query)%n%s", query));
 		}

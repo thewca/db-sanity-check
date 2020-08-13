@@ -1,0 +1,22 @@
+category 1
+topic 1
+select 1 from dual
+
+category 1
+topic 2
+select 2 from dual
+
+category 2
+topic 3
+select 3 from dual
+
+category 3
+topic 4
+
+category 3
+topic 5
+select 5 from dual
+
+category 3
+topic 6
+select 6 from dual
