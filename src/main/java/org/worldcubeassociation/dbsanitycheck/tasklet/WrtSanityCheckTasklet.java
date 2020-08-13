@@ -1,5 +1,6 @@
 package org.worldcubeassociation.dbsanitycheck.tasklet;
 
+import java.io.FileNotFoundException;
 import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -9,15 +10,13 @@ import java.util.Map;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
-import org.springframework.batch.item.ParseException;
-import org.springframework.batch.item.UnexpectedInputException;
 import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
-import org.worldcubeassociation.dbsanitycheck.bean.CategoryBean;
 import org.worldcubeassociation.dbsanitycheck.bean.QueryBean;
-import org.worldcubeassociation.dbsanitycheck.helper.QueryHelper;
+import org.worldcubeassociation.dbsanitycheck.exception.SanityCheckException;
+import org.worldcubeassociation.dbsanitycheck.reader.QueryReader;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -29,17 +28,19 @@ public class WrtSanityCheckTasklet implements Tasklet {
 	private JdbcTemplate jdbcTemplate;
 
 	@Autowired
-	private QueryHelper queryHelper;
+	private QueryReader queryReader;
 
-	// Hold category, topic and result
+	// Hold inconsistencies
 	private Map<String, List<String>> analysis = new HashMap<>();
+
+	private List<QueryBean> queries = new ArrayList<>();
 
 	@Override
 	public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext)
-			throws UnexpectedInputException, ParseException, Exception {
+			throws FileNotFoundException, SanityCheckException {
 
 		// Read queryes
-		queryHelper.read();
+		queries = queryReader.read();
 
 		executeQueries();
 		showResults();
@@ -52,13 +53,18 @@ public class WrtSanityCheckTasklet implements Tasklet {
 	private void executeQueries() {
 		log.info("Execute queries");
 
-		queryHelper.getCategories().keySet().forEach(cat -> {
-			log.info(" ========== Category = {} ========== ", cat);
+		String prevCategory = null;
+		for (QueryBean query : queries) {
 
-			CategoryBean category = queryHelper.getQueriesByCategory(cat);
+			// We log at each new category
+			String category = query.getCategory();
+			if (prevCategory == null || !prevCategory.equals(category)) {
+				log.info(" ========== Category = {} ========== ", category);
+				prevCategory = category;
+			}
 
-			category.getQueries().forEach(queryBean -> generalAnalysis(queryBean));
-		});
+			generalAnalysis(query);
+		}
 	}
 
 	/**

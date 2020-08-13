@@ -22,6 +22,10 @@ public class QueryReader {
 	@Value("${job.queryreader.filename}")
 	private String filename;
 
+	// We ask the user to keep categories organized together
+	private String prevCategory;
+	private List<String> consideredCategories = new ArrayList<>();
+
 	public List<QueryBean> read() throws FileNotFoundException, SanityCheckException {
 		log.info("Read file");
 
@@ -40,20 +44,42 @@ public class QueryReader {
 							String.format("Expected group length is at least 3 lines.%n%s", group));
 				}
 
-				String category = split[0];
-				String topic = split[1];
-				String query = String.join("\n", Arrays.copyOfRange(split, 2, split.length));
-
-				QueryBean queryBean = new QueryBean();
-				queryBean.setCategory(category);
-				queryBean.setTopic(topic);
-				queryBean.setQuery(query);
-
-				result.add(queryBean);
+				addQuery(result, split);
 			}
 		}
+		log.info("Found {} categories", consideredCategories.size());
 		log.info("Found {} queries", result.size());
 
 		return result;
+	}
+
+	private void addQuery(List<QueryBean> result, String[] split) throws SanityCheckException {
+		String category = split[0];
+		String topic = split[1];
+		String query = String.join("\n", Arrays.copyOfRange(split, 2, split.length));
+
+		// If we find a new category
+		if (prevCategory == null || !prevCategory.equals(category)) {
+
+			// We make sure it is not duplicated. Categories should be organized.
+			if (consideredCategories.contains(category)) {
+				throw new SanityCheckException(
+						String.format("Categories should be placed together. Please check category %s.", category));
+			}
+			consideredCategories.add(category);
+			prevCategory = category;
+		}
+
+		QueryBean queryBean = new QueryBean();
+		queryBean.setCategory(category);
+		queryBean.setTopic(topic);
+		queryBean.setQuery(query);
+
+		if (result.indexOf(queryBean) >= 0) {
+			throw new SanityCheckException(String
+					.format("Duplicated query (it could be same category + topic or the same sql query)%n%s", query));
+		}
+
+		result.add(queryBean);
 	}
 }
