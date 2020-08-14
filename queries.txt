@@ -40,7 +40,12 @@ SELECT p.id, subId, p.name, countryId FROM Persons AS p LEFT JOIN Countries AS c
 
 Person data irregularities
 D1. Bogus DOBs (DOBs with year outside of reasonable range):
-SELECT * FROM Persons WHERE year>0 AND (year < 1920 OR year >= 2017)
+SELECT R.personId, MIN(C.year - P.year) AS min_age, MAX(C.year - P.year) 
+	AS max_age, GROUP_CONCAT(C.id) as suspicious_competitions 
+FROM Results R INNER JOIN Competitions C ON R.competitionId = C.id
+INNER JOIN Persons P on P.id = R.personId
+WHERE P.year > 0 AND (C.year - P.year < 3 OR C.year - P.year > 90)
+GROUP BY R.personId
 
 Person data irregularities
 D2. Missing DOCs at scale (competitions after 2018 with at least 3 missing DOBs)
@@ -382,10 +387,12 @@ HAVING IF(time_limit LIKE '%[]%', value1>=timeLimit OR value2>=timeLimit OR valu
           sumOfSolves>=timeLimit)
 
 Consistency of Results& rounds data
-11. Time limit violations over multiple rounds with shared time limit:
-SELECT ro.id, COUNT(*) AS noOfRounds, SUM(IF(value1<0,0,value1)+IF(value2<0,0,value2)+IF(value3<0,0,value3)+IF(value4<0,0,value4)+IF(value5<0,0,value5)) AS sumOfSolves,
-REVERSE(SUBSTRING_INDEX(REVERSE(SUBSTRING_INDEX(time_limit, ',', 1)), ':', 1)) AS timeLimit,
-ce.competition_id, ro.time_limit, r.personId, r.personName, r.countryId
+11. Time limit violations over multiple rounds with shared time limit
+SELECT GROUP_CONCAT(ro.id) as rounds_ids, COUNT(*) AS noOfRounds, 
+	SUM(IF(value1<0,0,value1)+IF(value2<0,0,value2)+IF(value3<0,0,value3)
+        +IF(value4<0,0,value4)+IF(value5<0,0,value5)) AS sumOfSolves,
+    REVERSE(SUBSTRING_INDEX(REVERSE(SUBSTRING_INDEX(time_limit, ',', 1)), ':', 1)) AS timeLimit,
+    ce.competition_id, ro.time_limit, r.personId
 FROM rounds ro
 INNER JOIN competition_events ce ON ce.id = ro.competition_event_id
 INNER JOIN (SELECT DISTINCT competitionId, eventId, roundTypeId FROM Results
@@ -395,8 +402,7 @@ ON re.competitionId = ce.competition_id AND re.eventId = ce.event_id AND
    WHEN 0 THEN re.roundTypeId IN ('0', 'b', 'h') WHEN 1 THEN re.roundTypeId IN ('1', 'd') 
    WHEN 2 THEN re.roundTypeId IN ('2', 'e') WHEN 3 THEN re.roundTypeId IN ('3', 'g') END)
 JOIN Results r ON ce.competition_id=r.competitionId AND ce.event_id=r.eventId AND re.roundTypeId=r.roundTypeId
-WHERE time_limit IS NOT NULL AND time_limit LIKE '%[%"""",""""%]%'
+WHERE time_limit IS NOT NULL AND time_limit LIKE '%[%,%]%'
 GROUP BY personId, competition_id, time_limit
 HAVING sumOfSolves>=timeLimit
-
 
