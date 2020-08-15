@@ -3,7 +3,7 @@ package org.worldcubeassociation.dbsanitycheck.tasklet;
 import java.io.FileNotFoundException;
 import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -31,7 +31,7 @@ public class WrtSanityCheckTasklet implements Tasklet {
 	private QueryReader queryReader;
 
 	// Hold inconsistencies
-	private Map<String, List<String>> analysis = new HashMap<>();
+	private Map<String, List<String>> analysis = new LinkedHashMap<>();
 
 	private List<QueryBean> queries = new ArrayList<>();
 
@@ -93,18 +93,18 @@ public class WrtSanityCheckTasklet implements Tasklet {
 				String name = rsmd.getColumnName(i);
 				out.add(name + "=" + rs.getString(i));
 			}
-			return String.join(",", out);
+			return String.join(", ", out);
 		});
 
 		if (!result.isEmpty()) {
 			log.info("* Found {} results for {}", result.size(), topic);
-			analysis.put(String.format("Category = %s, topic = %s", category, topic), result);
+			analysis.put(String.format("[category] %s, [topic] %s", category, topic), result);
 		}
 	}
 
 	private void showResults() {
 		for (String key : analysis.keySet()) {
-			log.warn("Inconsistency at " + key);
+			log.warn(" ** Inconsistency at " + key);
 			for (String result : analysis.get(key)) {
 				log.info(result);
 			}
