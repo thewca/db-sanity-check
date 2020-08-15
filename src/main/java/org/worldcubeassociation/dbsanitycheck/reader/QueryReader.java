@@ -1,20 +1,17 @@
 package org.worldcubeassociation.dbsanitycheck.reader;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Scanner;
 
-import org.springframework.batch.item.ExecutionContext;
-import org.springframework.batch.item.ParseException;
-import org.springframework.batch.item.UnexpectedInputException;
-import org.springframework.batch.item.file.FlatFileItemReader;
-import org.springframework.batch.item.file.mapping.DefaultLineMapper;
-import org.springframework.batch.item.file.mapping.FieldSetMapper;
-import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
-import org.springframework.batch.item.file.transform.FieldSet;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 import org.worldcubeassociation.dbsanitycheck.bean.QueryBean;
+import org.worldcubeassociation.dbsanitycheck.exception.SanityCheckException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,50 +19,70 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class QueryReader {
 
-	@Value("${job.queryreader.delimiter}")
-	private String delimiter;
+	@Value("${job.queryreader.filename}")
+	private String filename;
 
-	public List<QueryBean> read() throws UnexpectedInputException, ParseException, Exception {
-		ClassPathResource queriesFile = new ClassPathResource("queries.csv");
+	// We ask the user to keep categories organized together
+	private String prevCategory;
+	private List<String> consideredCategories = new ArrayList<>();
 
-		log.info("Read from file {}", queriesFile);
+	public List<QueryBean> read() throws FileNotFoundException, SanityCheckException {
+		log.info("Read file");
 
-		FlatFileItemReader<QueryBean> itemReader = new FlatFileItemReader<>();
-		itemReader.setResource(queriesFile);
+		List<QueryBean> result = new ArrayList<>();
 
-		// Comma as default
-		DefaultLineMapper<QueryBean> lineMapper = new DefaultLineMapper<>();
-		lineMapper.setLineTokenizer(new DelimitedLineTokenizer(delimiter));
-		lineMapper.setFieldSetMapper(new QueryBeanFieldSetMapper());
-		itemReader.setLineMapper(lineMapper);
-		itemReader.open(new ExecutionContext());
+		InputStream is = new FileInputStream(filename);
+		try (Scanner scan = new Scanner(is)) {
+			scan.useDelimiter("(\n){2,}");
 
-		List<QueryBean> queries = new ArrayList<>();
-		while (true) {
-			QueryBean query = itemReader.read();
-			if (query == null) {
-				break;
+			while (scan.hasNext()) {
+				String group = scan.next().trim();
+				String[] split = group.split("\n");
+
+				if (split.length < 3) {
+					throw new SanityCheckException(
+							String.format("Expected group length is at least 3 lines.%n%s", group));
+				}
+
+				addQuery(result, split);
 			}
-
-			queries.add(query);
 		}
+		log.info(String.format("Found %s categories", consideredCategories.size()));
+		log.info(String.format("Found %s queries", result.size()));
 
-		log.info("Found {} queries", queries.size());
-
-		return queries;
-
+		return result;
 	}
 
-	private static class QueryBeanFieldSetMapper implements FieldSetMapper<QueryBean> {
-		public QueryBean mapFieldSet(FieldSet fieldSet) {
-			QueryBean query = new QueryBean();
+	private void addQuery(List<QueryBean> result, String[] split) throws SanityCheckException {
+		String category = split[0];
+		String topic = split[1];
+		String query = String.join("\n", Arrays.copyOfRange(split, 2, split.length));
 
-			query.setCategory(fieldSet.readString(0));
-			query.setTopic(fieldSet.readString(1));
-			query.setQuery(fieldSet.readString(2));
+		// If we find a new category
+		if (prevCategory == null || !prevCategory.equals(category)) {
 
-			return query;
+			// We make sure it is not duplicated. Categories should be organized.
+			if (consideredCategories.contains(category)) {
+				log.error("Categories not organized");
+				consideredCategories.add(category); // Just to log a help
+				throw new SanityCheckException(String
+						.format("Categories should be placed together. Categories found: %s.", consideredCategories));
+			}
+			consideredCategories.add(category);
+			prevCategory = category;
 		}
-	}
 
+		QueryBean queryBean = new QueryBean();
+		queryBean.setCategory(category);
+		queryBean.setTopic(topic);
+		queryBean.setQuery(query);
+
+		if (result.indexOf(queryBean) >= 0) {
+			log.error("Repeated query");
+			throw new SanityCheckException(String
+					.format("Duplicated query (it could be same category + topic or the same sql query)%n%s", query));
+		}
+
+		result.add(queryBean);
+	}
 }
