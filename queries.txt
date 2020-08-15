@@ -8,11 +8,17 @@ SELECT * FROM Persons WHERE BINARY name REGEXP '^[a-z]'
 
 Person data irregularities
 N3. Lowercase last names (without local name)
-SELECT * FROM Persons WHERE BINARY MID(REVERSE(name), LOCATE(' ', REVERSE(name))-1,1) <> UPPER(MID(REVERSE(name), LOCATE(' ', REVERSE(name))-1,1))
+SELECT * FROM Persons 
+WHERE BINARY MID(REVERSE(name), LOCATE(' ', REVERSE(name))-1,1) 
+        <> UPPER(MID(REVERSE(name), LOCATE(' ', REVERSE(name))-1,1))
 
 Person data irregularities
 N4. Lowercase last names (with local name)
-SELECT * FROM Persons WHERE name LIKE '%(%' and BINARY MID(REVERSE(LEFT(name, LOCATE('(',name)-2)), LOCATE(' ', REVERSE(LEFT(name, LOCATE('(',name)-2)))-1,1) <> UPPER(MID(REVERSE(LEFT(name, LOCATE('(',name)-2)), LOCATE(' ', REVERSE(LEFT(name, LOCATE('(',name)-2)))-1,1))
+SELECT * FROM Persons WHERE name LIKE '%(%' 
+AND BINARY MID(REVERSE(LEFT(name, LOCATE('(',name)-2)), 
+               LOCATE(' ', REVERSE(LEFT(name, LOCATE('(',name)-2)))-1,1) 
+        <> UPPER(MID(REVERSE(LEFT(name, LOCATE('(',name)-2)), 
+                 LOCATE(' ', REVERSE(LEFT(name, LOCATE('(',name)-2)))-1,1))
 
 Person data irregularities
 N5. Bad local names (roman characters in brackets)
@@ -20,15 +26,18 @@ SELECT * FROM Persons WHERE BINARY name REGEXP '[(].*[A-Za-z]+'
 
 Person data irregularities
 N6. Missing one bracket for local names
-SELECT * FROM Persons WHERE (name LIKE '%(%' OR name LIKE '%)') AND name NOT LIKE '%(%)%'
+SELECT * FROM Persons 
+WHERE (name LIKE '%(%' OR name LIKE '%)') AND name NOT LIKE '%(%)%'
 
 Person data irregularities
 N7. Trailing spaces in names or local names
-SELECT * FROM Persons WHERE name LIKE ' %' OR name LIKE '% ' OR name LIKE '%( %' OR name LIKE '% )'
+SELECT * FROM Persons 
+WHERE name LIKE ' %' OR name LIKE '% ' OR name LIKE '%( %' OR name LIKE '% )'
 
 Person data irregularities
 N8. Cyrillic/Greek alphabet used instead of Latin
-SELECT * FROM Persons WHERE name REGEXP '[А-ЯІΑ-Ω].*[(]' OR (name REGEXP '[А-ЯІΑ-Ω]' AND name NOT REGEXP '[(]')
+SELECT * FROM Persons WHERE name REGEXP '[А-ЯІΑ-Ω].*[(]' 
+        OR (name REGEXP '[А-ЯІΑ-Ω]' AND name NOT REGEXP '[(]')
 
 Person data irregularities
 G1. Person rows with empty string gender
@@ -36,7 +45,9 @@ SELECT * FROM Persons WHERE gender=''
 
 Person data irregularities
 C1. Invalid countryIds
-SELECT p.id, subId, p.name, countryId FROM Persons AS p LEFT JOIN Countries AS c ON p.countryId = c.id WHERE c.id is NULL
+SELECT p.id, subId, p.name, countryId FROM Persons AS p
+LEFT JOIN Countries AS c ON p.countryId = c.id
+WHERE c.id is NULL
 
 Person data irregularities
 D1. Bogus DOBs (DOBs with year outside of reasonable range):
@@ -48,8 +59,11 @@ WHERE P.year > 0 AND (C.year - P.year < 3 OR C.year - P.year > 90)
 GROUP BY R.personId
 
 Person data irregularities
-D2. Missing DOCs at scale (competitions after 2018 with at least 3 missing DOBs)
-SELECT competitionId, count(distinct personId) as missingDOBs FROM Results INNER JOIN Persons ON Results.personId=Persons.id WHERE Persons.year=0 AND RIGHT(competitionId,4) > 2018 GROUP BY competitionId HAVING missingDOBs >= 3 ORDER BY missingDOBs DESC
+D2. Missing DOBs at scale (competitions after 2018 with at least 3 missing DOBs)
+SELECT competitionId, count(distinct personId) as missingDOBs
+FROM Results INNER JOIN Persons ON Results.personId=Persons.id
+WHERE Persons.year=0 AND RIGHT(competitionId,4) > 2018
+GROUP BY competitionId HAVING missingDOBs >= 3 ORDER BY missingDOBs DESC
 
 Irregular results
 1. Results with empty first solve:
@@ -81,9 +95,13 @@ SELECT * FROM Results WHERE average <> 0 AND IF(value1<>0,1,0) + IF(value2<>0,1,
 
 Duplicate results
 1. Rows with at least two identical >0 results at one competition (ignoring 333fm, 333mbo):
-SELECT value1, value2, value3, value4, value5, GROUP_CONCAT(distinct eventId) as events, GROUP_CONCAT(distinct personId) as people, GROUP_CONCAT(distinct competitionId), count(*) as amount FROM Results
-WHERE IF(value1>0,1,0) + IF(value2>0,1,0) + IF(value3>0,1,0) + IF(value4>0,1,0) + IF(value5>0,1,0) > 1 AND eventId not in ('333mbo', '333fm')
-GROUP BY value1, value2, value3, value4, value5 HAVING amount > 1 AND count(distinct competitionId) = 1 ORDER BY amount DESC
+SELECT value1, value2, value3, value4, value5, count(*) as num_rows, 
+ GROUP_CONCAT(distinct personId) as people, GROUP_CONCAT(distinct eventId) as events, 
+ GROUP_CONCAT(distinct competitionId) as competitions 
+FROM Results WHERE eventId not in ('333mbo', '333fm') AND 
+ IF(value1>0,1,0) + IF(value2>0,1,0) + IF(value3>0,1,0) + IF(value4>0,1,0) + IF(value5>0,1,0) > 1
+GROUP BY value1, value2, value3, value4, value5 
+HAVING num_rows > 1 AND count(distinct competitionId) = 1
 
 WCA-ID irregularities
 1. WCA-ID year is not the start year of the profiles first competition:
@@ -174,37 +192,44 @@ INNER JOIN users u ON p.id=u.wca_id AND p.name<>u.name AND p.subId=1
 
 Suspicious rounds data
 1. Time limit > cutoff
-SELECT ce.competition_id, ce.event_id, CONVERT(MID(ro.time_limit, 17, 10), UNSIGNED INTEGER) time_limit, CONVERT(MID(ro.cutoff, 39, 10), UNSIGNED INTEGER) cutoff
+SELECT ce.competition_id, ce.event_id, 
+ CONVERT(MID(ro.time_limit, 17, 10), UNSIGNED INTEGER) time_limit, 
+ CONVERT(MID(ro.cutoff, 39, 10), UNSIGNED INTEGER) cutoff
 FROM rounds as ro INNER JOIN competition_events as ce on ce.id = ro.competition_event_id
 WHERE time_limit is not NULL and ro.cutoff is not NULL
 HAVING time_limit> 0 and time_limit < cutoff
 
 Suspicious rounds data
 2. Cutoff < 5 seconds:
-SELECT ce.competition_id, ce.event_id, CONVERT(MID(ro.cutoff, 39, 10), UNSIGNED INTEGER) cutoff
+SELECT ce.competition_id, ce.event_id, 
+ CONVERT(MID(ro.cutoff, 39, 10), UNSIGNED INTEGER) cutoff
 FROM rounds as ro INNER JOIN competition_events as ce on ce.id = ro.competition_event_id
 WHERE ro.cutoff is not NULL and ce.event_id <> '333fm' 
 HAVING cutoff < 500
 
 Suspicious rounds data
 3. Cutoff > 10 minutes:
-SELECT ce.competition_id, ce.event_id, CONVERT(MID(ro.cutoff, 39, 10), UNSIGNED INTEGER) cutoff
+SELECT ce.competition_id, ce.event_id, 
+ CONVERT(MID(ro.cutoff, 39, 10), UNSIGNED INTEGER) cutoff
 FROM rounds as ro INNER JOIN competition_events as ce on ce.id = ro.competition_event_id
 WHERE ro.cutoff is not NULL and ce.event_id <> '333mbf'
 HAVING cutoff > 60000
 
 Suspicious rounds data
-4. Time limit < 10 seconds:
-SELECT ce.competition_id, ce.event_id, CONVERT(MID(ro.time_limit, 17, 10), UNSIGNED INTEGER) time_limit
+4. Time limit < 10 seconds
+SELECT ce.competition_id, ce.event_id, 
+ CONVERT(MID(ro.time_limit, 17, 10), UNSIGNED INTEGER) time_limit
 FROM rounds as ro INNER JOIN competition_events as ce on ce.id = ro.competition_event_id
 WHERE time_limit is not NULL
 HAVING time_limit> 0 and time_limit < 1000
 
 Suspicious rounds data
 5. Time limit > 10 minutes for ""fast events"":
-SELECT ce.competition_id, ce.event_id, CONVERT(MID(ro.time_limit, 17, 10), UNSIGNED INTEGER) time_limit
+SELECT ce.competition_id, ce.event_id, 
+ CONVERT(MID(ro.time_limit, 17, 10), UNSIGNED INTEGER) time_limit
 FROM rounds as ro INNER JOIN competition_events as ce on ce.id = ro.competition_event_id
-WHERE time_limit is not NULL and ce.event_id in ('333', '222', '444', '333oh', 'clock', 'mega', 'pyram', 'skewb', 'sq1') HAVING time_limit> 60000
+WHERE time_limit is not NULL AND ce.event_id in ('333', '222', '444', '333oh', 'clock', 'mega', 'pyram', 'skewb', 'sq1') 
+HAVING time_limit> 60000
 
 Consistency of Results & Persons
 1. Persons table entries without Results table entry:
@@ -389,7 +414,7 @@ HAVING IF(time_limit LIKE '%[]%', value1>=timeLimit OR value2>=timeLimit OR valu
 Consistency of Results& rounds data
 11. Time limit violations over multiple rounds with shared time limit
 SELECT GROUP_CONCAT(ro.id) as rounds_ids, COUNT(*) AS noOfRounds, 
-	SUM(IF(value1<0,0,value1)+IF(value2<0,0,value2)+IF(value3<0,0,value3)
+        SUM(IF(value1<0,0,value1)+IF(value2<0,0,value2)+IF(value3<0,0,value3)
         +IF(value4<0,0,value4)+IF(value5<0,0,value5)) AS sumOfSolves,
     REVERSE(SUBSTRING_INDEX(REVERSE(SUBSTRING_INDEX(time_limit, ',', 1)), ':', 1)) AS timeLimit,
     ce.competition_id, ro.time_limit, r.personId
@@ -405,4 +430,3 @@ JOIN Results r ON ce.competition_id=r.competitionId AND ce.event_id=r.eventId AN
 WHERE time_limit IS NOT NULL AND time_limit LIKE '%[%,%]%'
 GROUP BY personId, competition_id, time_limit
 HAVING sumOfSolves>=timeLimit
-
