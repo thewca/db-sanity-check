@@ -23,5 +23,5 @@ unzip "$export_file_zip"
 
 echo "Executing the .sql (make sure you created a database called 'wca_development')."
 echo "This can take a few hours."
-sudo mysql -e "USE wca_development; SOURCE $export_file_sql;"
+sudo mysql -e "create database if not exists wca_development; USE wca_development; SOURCE $export_file_sql;"
 
