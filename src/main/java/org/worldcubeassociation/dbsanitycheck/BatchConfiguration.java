@@ -30,7 +30,7 @@ public class BatchConfiguration {
 	@Bean
 	public Job wrtSanityCheck() {
 
-		return jobBuilderFactory.get("handleDatabaseExport").start(sanityCheck()).incrementer(new RunIdIncrementer())
+		return jobBuilderFactory.get("wrtSanityCheck").start(sanityCheck()).incrementer(new RunIdIncrementer())
 				.build();
 	}
 
