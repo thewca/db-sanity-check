@@ -7,6 +7,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.mail.MessagingException;
+
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.scope.context.ChunkContext;
 import org.springframework.batch.core.step.tasklet.Tasklet;
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Component;
 import org.worldcubeassociation.dbsanitycheck.bean.QueryBean;
 import org.worldcubeassociation.dbsanitycheck.exception.SanityCheckException;
 import org.worldcubeassociation.dbsanitycheck.reader.QueryReader;
+import org.worldcubeassociation.dbsanitycheck.service.EmailService;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -30,6 +33,9 @@ public class WrtSanityCheckTasklet implements Tasklet {
 	@Autowired
 	private QueryReader queryReader;
 
+	@Autowired
+	private EmailService emailService;
+
 	// Hold inconsistencies
 	private Map<String, List<String>> analysis = new LinkedHashMap<>();
 
@@ -37,7 +43,7 @@ public class WrtSanityCheckTasklet implements Tasklet {
 
 	@Override
 	public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext)
-			throws FileNotFoundException, SanityCheckException {
+			throws FileNotFoundException, SanityCheckException, MessagingException {
 
 		// Read queryes
 		queries = queryReader.read();
@@ -46,6 +52,8 @@ public class WrtSanityCheckTasklet implements Tasklet {
 		showResults();
 
 		log.info("All queries executed");
+
+		emailService.sendEmail(analysis);
 
 		return RepeatStatus.FINISHED;
 	}

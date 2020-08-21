@@ -1,9 +1,17 @@
 package org.worldcubeassociation.dbsanitycheck.service.impl;
 
+import java.io.File;
+import java.util.List;
+import java.util.Map;
+
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.worldcubeassociation.dbsanitycheck.service.EmailService;
 
@@ -26,15 +34,22 @@ public class EmailServiceImpl implements EmailService {
 	private JavaMailSender emailSender;
 
 	@Override
-	public void sendEmail(String content) {
+	public void sendEmail(Map<String, List<String>> analysis) throws MessagingException {
 		if (sendMail) {
 			log.info("Sending email with the analysis");
 
-			SimpleMailMessage message = new SimpleMailMessage();
-			message.setFrom("noreply@worldcubeassociation.org");
-			message.setTo(emailTo);
-			message.setSubject(subject);
-			message.setText(content);
+			MimeMessage message = emailSender.createMimeMessage();
+
+			MimeMessageHelper helper = new MimeMessageHelper(message, true);
+
+			helper.setFrom("acampos@worldcubeassociation.org");
+			helper.setTo(emailTo);
+			helper.setSubject(subject);
+			helper.setText("Done, test");
+
+			FileSystemResource file = new FileSystemResource(new File("log/db-sanity-check.log"));
+			helper.addAttachment("Invoice", file);
+
 			emailSender.send(message);
 		} else {
 			log.info("Not sending email");
