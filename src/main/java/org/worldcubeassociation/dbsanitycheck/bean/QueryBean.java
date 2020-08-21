@@ -40,6 +40,10 @@ public class QueryBean {
 		}
 		
 		return other.getQuery().equals(query);
-
+	}
+	
+	@Override
+	public int hashCode() {
+		return query.hashCode(); // Not great
 	}
 }

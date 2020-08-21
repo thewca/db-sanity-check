@@ -11,27 +11,22 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.worldcubeassociation.dbsanitycheck.tasklet.WrtSanityCheckTasklet;
 
-//This is not yet in use, until the invalid date gets fixed on the export.
-//https://github.com/thewca/worldcubeassociation.org/blob/44161b981c891032fecc3c4ed8944521d87dff3b/WcaOnRails/db/structure.sql#L99
-
 @Configuration
 @EnableBatchProcessing
 public class BatchConfiguration {
 
 	@Autowired
-	public JobBuilderFactory jobBuilderFactory;
+	private JobBuilderFactory jobBuilderFactory;
 
 	@Autowired
-	public StepBuilderFactory stepBuilderFactory;
+	private StepBuilderFactory stepBuilderFactory;
 
 	@Autowired
 	private WrtSanityCheckTasklet wrtSanityCheckTasklet;
 
 	@Bean
 	public Job wrtSanityCheck() {
-
-		return jobBuilderFactory.get("handleDatabaseExport").start(sanityCheck()).incrementer(new RunIdIncrementer())
-				.build();
+		return jobBuilderFactory.get("wrtSanityCheck").start(sanityCheck()).incrementer(new RunIdIncrementer()).build();
 	}
 
 	@Bean
