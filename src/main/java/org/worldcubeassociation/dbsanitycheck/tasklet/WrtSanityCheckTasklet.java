@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.mail.MessagingException;
 
@@ -111,9 +112,9 @@ public class WrtSanityCheckTasklet implements Tasklet {
 	}
 
 	private void showResults() {
-		for (String key : analysis.keySet()) {
-			log.warn(" ** Inconsistency at " + key);
-			for (String result : analysis.get(key)) {
+		for (Entry<String, List<String>> item : analysis.entrySet()) {
+			log.warn(" ** Inconsistency at " + item.getKey());
+			for (String result : item.getValue()) {
 				log.info(result);
 			}
 		}
