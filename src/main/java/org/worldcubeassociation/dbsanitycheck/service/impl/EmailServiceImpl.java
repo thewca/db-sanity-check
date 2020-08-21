@@ -47,8 +47,9 @@ public class EmailServiceImpl implements EmailService {
 			helper.setSubject(subject);
 			helper.setText("Done, test");
 
+			// Email the log file
 			FileSystemResource file = new FileSystemResource(new File("log/db-sanity-check.log"));
-			helper.addAttachment("Invoice", file);
+			helper.addAttachment("db-sanity-check.log", file);
 
 			emailSender.send(message);
 		} else {
