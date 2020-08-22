@@ -27,6 +27,9 @@ public class EmailServiceImpl implements EmailService {
 
 	@Value("${service.mail.to}")
 	private String emailTo;
+	
+	@Value("${service.mail.from}")
+	private String mailFrom;
 
 	@Value("${service.mail.subject}")
 	private String subject;
@@ -44,7 +47,7 @@ public class EmailServiceImpl implements EmailService {
 			boolean multipart = true;
 			MimeMessageHelper helper = new MimeMessageHelper(message, multipart);
 
-			helper.setFrom("acampos@worldcubeassociation.org");
+			helper.setFrom(mailFrom);
 			helper.setTo(emailTo);
 			helper.setSubject(subject);
 
@@ -53,7 +56,7 @@ public class EmailServiceImpl implements EmailService {
 
 			// Email the log file
 			FileSystemResource file = new FileSystemResource(new File("log/db-sanity-check.log"));
-			helper.addAttachment("db-sanity-check.log", file);
+			helper.addAttachment("db-sanity-check.txt", file);
 
 			emailSender.send(message);
 		} else {
