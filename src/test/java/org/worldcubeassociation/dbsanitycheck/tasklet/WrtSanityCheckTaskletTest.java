@@ -66,7 +66,7 @@ public class WrtSanityCheckTaskletTest {
 	@SuppressWarnings("unchecked")
 	public void executeTest() throws FileNotFoundException, SanityCheckException, MessagingException {
 		when(queryReader.read()).thenReturn(getDefaultQueries());
-		when(jdbcTemplate.query(anyString(), any(RowMapper.class))).thenReturn(getDefaultQueryResult());
+		when(jdbcTemplate.query(anyString(), any(RowMapper.class))).thenAnswer(answer -> getDefaultQueryResult());
 
 		RepeatStatus status = wrtSanityCheckTasklet.execute(contribution, chunkContext);
 

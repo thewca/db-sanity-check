@@ -2,11 +2,9 @@ package org.worldcubeassociation.dbsanitycheck.bean;
 
 import lombok.Getter;
 import lombok.Setter;
-import lombok.ToString;
 
 @Getter
 @Setter
-@ToString
 public class QueryBean extends BaseBean {
 	private String query;
 
