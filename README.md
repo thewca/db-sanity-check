@@ -6,7 +6,7 @@ The database is very large and we need to run verifications periodically. Instea
 
 ## Setup local database
 
-This batch uses an internal database for handling WCA data and also the batch status.
+You can use an internal database for handling WCA data and also the batch status.
 
 In case you do not have it installed yet, you will need to get MySQL.
 
@@ -43,3 +43,4 @@ It will ask you to run in sudo mode in order to execute the sql.
 ## Project details
 
 This project uses [Maven](https://maven.apache.org/) as the build system. It was built using [Spring Batch](https://spring.io/projects/spring-batch), an awesome framework for building batches/jobs.
+
