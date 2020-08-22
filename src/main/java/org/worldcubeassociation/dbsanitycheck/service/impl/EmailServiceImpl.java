@@ -28,13 +28,16 @@ public class EmailServiceImpl implements EmailService {
 	private boolean sendMail;
 
 	@Value("${service.mail.to}")
-	private String emailTo;
+	private String mailTo;
 
 	@Value("${service.mail.from}")
 	private String mailFrom;
 
 	@Value("${service.mail.subject}")
 	private String subject;
+	
+	@Value("${service.mail.logfilepath}")
+	private String logFilePath;
 
 	@Autowired
 	private JavaMailSender emailSender;
@@ -50,17 +53,23 @@ public class EmailServiceImpl implements EmailService {
 			MimeMessageHelper helper = new MimeMessageHelper(message, multipart);
 
 			helper.setFrom(mailFrom);
-			helper.setTo(InternetAddress.parse(emailTo));
+			helper.setTo(InternetAddress.parse(mailTo));
 			helper.setSubject(subject);
+
+			log.info("Mail from: " + mailFrom);
+			log.info("Mail to: " + mailTo);
+			log.info("Subject: " + subject);
 
 			boolean html = true;
 			helper.setText(getText(analysisResult), html);
 
-			// Email the log file
-			FileSystemResource file = new FileSystemResource(new File("log/db-sanity-check.log"));
+			log.info("Attach log file");
+			FileSystemResource file = new FileSystemResource(new File(logFilePath));
 			helper.addAttachment("db-sanity-check.txt", file);
 
 			emailSender.send(message);
+
+			log.info("Email sent.");
 		} else {
 			log.info("Not sending email");
 		}
@@ -68,6 +77,8 @@ public class EmailServiceImpl implements EmailService {
 	}
 
 	private String getText(List<AnalysisBean> analysisResult) {
+		log.info("Build email content");
+		
 		StringBuilder sb = new StringBuilder("<h2>Sanity Check Results</h2>\n\n");
 
 		if (analysisResult.isEmpty()) {
