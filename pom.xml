@@ -10,9 +10,9 @@
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>org.worldcubeassociation</groupId>
-	<artifactId>wca-sanity-check</artifactId>
+	<artifactId>db-sanity-check</artifactId>
 	<version>0.0.1</version>
-	<name>wca-sanity-check</name>
+	<name>db-sanity-check</name>
 	<description>Checks WCA database for inconsistencies</description>
 
 	<properties>
