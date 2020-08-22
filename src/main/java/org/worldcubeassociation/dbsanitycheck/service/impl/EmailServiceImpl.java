@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.mail.MessagingException;
+import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,7 +50,7 @@ public class EmailServiceImpl implements EmailService {
 			MimeMessageHelper helper = new MimeMessageHelper(message, multipart);
 
 			helper.setFrom(mailFrom);
-			helper.setTo(emailTo);
+			helper.setTo(InternetAddress.parse(emailTo));
 			helper.setSubject(subject);
 
 			boolean html = true;
@@ -69,7 +70,7 @@ public class EmailServiceImpl implements EmailService {
 	private String getText(List<AnalysisBean> analysisResult) {
 		StringBuilder sb = new StringBuilder("<h2>Sanity Check Results</h2>\n\n");
 
-		if (analysisResult.size() == 0) {
+		if (analysisResult.isEmpty()) {
 			sb.append("<p>No results to show</p>\n");
 		} else {
 			sb.append("<p>Found inconsistencies in ").append(analysisResult.size()).append(" topics.</p>\n\n");
