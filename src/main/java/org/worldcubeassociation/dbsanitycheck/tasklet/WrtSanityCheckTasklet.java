@@ -38,7 +38,7 @@ public class WrtSanityCheckTasklet implements Tasklet {
 	private EmailService emailService;
 
 	// Hold inconsistencies
-	private List<AnalysisBean> analysisResults = new ArrayList<>();
+	private List<AnalysisBean> analysisResult = new ArrayList<>();
 
 	private List<QueryBean> queries = new ArrayList<>();
 
@@ -54,7 +54,7 @@ public class WrtSanityCheckTasklet implements Tasklet {
 
 		log.info("All queries executed");
 
-		// emailService.sendEmail(analysis);
+		emailService.sendEmail(analysisResult);
 
 		return RepeatStatus.FINISHED;
 	}
@@ -113,12 +113,12 @@ public class WrtSanityCheckTasklet implements Tasklet {
 			analysisBean.setTopic(topic);
 			analysisBean.setAnalysis(result);
 
-			analysisResults.add(analysisBean);
+			analysisResult.add(analysisBean);
 		}
 	}
 
 	private void showResults() {
-		analysisResults.forEach(item -> {
+		analysisResult.forEach(item -> {
 			log.warn(" ** Inconsistency at [{}] {}", item.getCategory(), item.getTopic());
 			item.getAnalysis().stream().forEach(this::logMap);
 		});
