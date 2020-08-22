@@ -1,6 +1,5 @@
 package org.worldcubeassociation.dbsanitycheck.service.impl;
 
-import static org.hamcrest.CoreMatchers.any;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
