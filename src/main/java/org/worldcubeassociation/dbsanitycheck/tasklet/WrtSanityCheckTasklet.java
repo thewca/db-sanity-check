@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import javax.mail.MessagingException;
 
@@ -17,6 +16,7 @@ import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
+import org.worldcubeassociation.dbsanitycheck.bean.AnalysisBean;
 import org.worldcubeassociation.dbsanitycheck.bean.QueryBean;
 import org.worldcubeassociation.dbsanitycheck.exception.SanityCheckException;
 import org.worldcubeassociation.dbsanitycheck.reader.QueryReader;
@@ -38,7 +38,7 @@ public class WrtSanityCheckTasklet implements Tasklet {
 	private EmailService emailService;
 
 	// Hold inconsistencies
-	private Map<String, List<String>> analysis = new LinkedHashMap<>();
+	private List<AnalysisBean> analysisResults = new ArrayList<>();
 
 	private List<QueryBean> queries = new ArrayList<>();
 
@@ -54,7 +54,7 @@ public class WrtSanityCheckTasklet implements Tasklet {
 
 		log.info("All queries executed");
 
-		emailService.sendEmail(analysis);
+		// emailService.sendEmail(analysis);
 
 		return RepeatStatus.FINISHED;
 	}
@@ -91,33 +91,43 @@ public class WrtSanityCheckTasklet implements Tasklet {
 		log.info(" ===== " + topic + " ===== ");
 		log.info(query);
 
-		List<String> result = jdbcTemplate.query(query, (rs, rowNum) -> {
+		List<Map<String, String>> result = jdbcTemplate.query(query, (rs, rowNum) -> {
 			// Makes the result set into 1 result
-			List<String> out = new ArrayList<>();
+			Map<String, String> out = new LinkedHashMap<>();
 			ResultSetMetaData rsmd = rs.getMetaData();
 			int columnCount = rsmd.getColumnCount();
 
 			// The column count starts from 1
 			for (int i = 1; i <= columnCount; i++) {
 				String name = rsmd.getColumnName(i);
-				out.add(name + "=" + rs.getString(i));
+				out.put(name, rs.getString(i));
 			}
-			return String.join(", ", out);
+			return out;
 		});
 
 		if (!result.isEmpty()) {
 			log.info("* Found {} results for {}", result.size(), topic);
-			analysis.put(String.format("[category] %s, [topic] %s", category, topic), result);
+
+			AnalysisBean analysisBean = new AnalysisBean();
+			analysisBean.setCategory(category);
+			analysisBean.setTopic(topic);
+			analysisBean.setAnalysis(result);
+
+			analysisResults.add(analysisBean);
 		}
 	}
 
 	private void showResults() {
-		for (Entry<String, List<String>> item : analysis.entrySet()) {
-			log.warn(" ** Inconsistency at " + item.getKey());
-			for (String result : item.getValue()) {
-				log.info(result);
-			}
-		}
+		analysisResults.forEach(item -> {
+			log.warn(" ** Inconsistency at [{}] {}", item.getCategory(), item.getTopic());
+			item.getAnalysis().stream().forEach(this::logMap);
+		});
+	}
+
+	// LinkedHashMap has a nice toString. We just remove { and } from the edges.
+	private void logMap(Map<String, String> analysis) {
+		String str = analysis.toString();
+		log.info(str.substring(1, str.length() - 1));
 	}
 
 }

@@ -7,9 +7,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public class QueryBean {
-	private String category;
-	private String topic;
+public class QueryBean extends BaseBean {
 	private String query;
 
 	@Override
@@ -17,31 +15,31 @@ public class QueryBean {
 		if (obj == null) {
 			return false;
 		}
-		
+
 		if (obj.getClass() != this.getClass()) {
-            return false;
-        }
-		
+			return false;
+		}
+
 		final QueryBean other = (QueryBean) obj;
-		
+
 		// First, we compare category and topic
 		if (other.getCategory() == null || other.getTopic() == null) {
 			return false;
 		}
-		
+
 		// If they match, returns true
-		if (other.getCategory().equals(category) && other.getTopic().equals(topic)) {
+		if (other.getCategory().equals(super.getCategory()) && other.getTopic().equals(super.getTopic())) {
 			return true;
 		}
-		
+
 		// Then we compare sql query
 		if (other.getQuery() == null) {
 			return false;
 		}
-		
+
 		return other.getQuery().equals(query);
 	}
-	
+
 	@Override
 	public int hashCode() {
 		return query.hashCode(); // Not great
