@@ -28,7 +28,7 @@ public class DbSanityCheckApplication implements CommandLineRunner {
 		wrtSanityCheckService.execute();
 		
 		SpringApplication.exit(context, () -> {
-			log.info("Finalizando aplicacao com codigo de saida 0");
+			log.info("Sucess");
 			return 0;
 		});
 	}

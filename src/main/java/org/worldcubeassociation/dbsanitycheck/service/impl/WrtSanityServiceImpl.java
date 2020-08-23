@@ -41,6 +41,7 @@ public class WrtSanityServiceImpl implements WrtSanityCheckService {
 
 	@Override
 	public void execute() throws FileNotFoundException, SanityCheckException, MessagingException {
+		log.info("WRT Sanity Check");
 
 		// Read queryes
 		queries = queryReader.read();
@@ -51,6 +52,8 @@ public class WrtSanityServiceImpl implements WrtSanityCheckService {
 		log.info("All queries executed");
 
 		emailService.sendEmail(analysisResult);
+		
+		log.info("Sanity check finished");
 	}
 
 	private void executeQueries() {
