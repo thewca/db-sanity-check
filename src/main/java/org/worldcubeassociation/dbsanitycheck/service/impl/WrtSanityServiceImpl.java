@@ -1,4 +1,4 @@
-package org.worldcubeassociation.dbsanitycheck.tasklet;
+package org.worldcubeassociation.dbsanitycheck.service.impl;
 
 import java.io.FileNotFoundException;
 import java.sql.ResultSetMetaData;
@@ -9,10 +9,6 @@ import java.util.Map;
 
 import javax.mail.MessagingException;
 
-import org.springframework.batch.core.StepContribution;
-import org.springframework.batch.core.scope.context.ChunkContext;
-import org.springframework.batch.core.step.tasklet.Tasklet;
-import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -21,12 +17,13 @@ import org.worldcubeassociation.dbsanitycheck.bean.QueryBean;
 import org.worldcubeassociation.dbsanitycheck.exception.SanityCheckException;
 import org.worldcubeassociation.dbsanitycheck.reader.QueryReader;
 import org.worldcubeassociation.dbsanitycheck.service.EmailService;
+import org.worldcubeassociation.dbsanitycheck.service.WrtSanityCheckService;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
-public class WrtSanityCheckTasklet implements Tasklet {
+public class WrtSanityServiceImpl implements WrtSanityCheckService {
 
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
@@ -43,8 +40,7 @@ public class WrtSanityCheckTasklet implements Tasklet {
 	private List<QueryBean> queries = new ArrayList<>();
 
 	@Override
-	public RepeatStatus execute(StepContribution contribution, ChunkContext chunkContext)
-			throws FileNotFoundException, SanityCheckException, MessagingException {
+	public void execute() throws FileNotFoundException, SanityCheckException, MessagingException {
 
 		// Read queryes
 		queries = queryReader.read();
@@ -55,8 +51,6 @@ public class WrtSanityCheckTasklet implements Tasklet {
 		log.info("All queries executed");
 
 		emailService.sendEmail(analysisResult);
-
-		return RepeatStatus.FINISHED;
 	}
 
 	private void executeQueries() {

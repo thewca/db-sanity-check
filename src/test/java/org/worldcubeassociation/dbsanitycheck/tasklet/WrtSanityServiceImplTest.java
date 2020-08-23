@@ -28,11 +28,12 @@ import org.worldcubeassociation.dbsanitycheck.bean.QueryBean;
 import org.worldcubeassociation.dbsanitycheck.exception.SanityCheckException;
 import org.worldcubeassociation.dbsanitycheck.reader.QueryReader;
 import org.worldcubeassociation.dbsanitycheck.service.EmailService;
+import org.worldcubeassociation.dbsanitycheck.service.impl.WrtSanityServiceImpl;
 
-public class WrtSanityCheckTaskletTest {
+public class WrtSanityServiceImplTest {
 
 	@InjectMocks
-	private WrtSanityCheckTasklet wrtSanityCheckTasklet;
+	private WrtSanityServiceImpl wrtSanityCheckTasklet;
 
 	@Mock
 	private StepContribution contribution;
