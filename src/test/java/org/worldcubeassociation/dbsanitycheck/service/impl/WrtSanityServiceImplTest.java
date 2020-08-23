@@ -1,6 +1,6 @@
-package org.worldcubeassociation.dbsanitycheck.tasklet;
+package org.worldcubeassociation.dbsanitycheck.service.impl;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -19,26 +19,20 @@ import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.batch.core.StepContribution;
-import org.springframework.batch.core.scope.context.ChunkContext;
-import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.worldcubeassociation.dbsanitycheck.bean.QueryBean;
 import org.worldcubeassociation.dbsanitycheck.exception.SanityCheckException;
 import org.worldcubeassociation.dbsanitycheck.reader.QueryReader;
 import org.worldcubeassociation.dbsanitycheck.service.EmailService;
+import org.worldcubeassociation.dbsanitycheck.util.LogUtil;
 
-public class WrtSanityCheckTaskletTest {
+import ch.qos.logback.classic.Logger;
+
+public class WrtSanityServiceImplTest {
 
 	@InjectMocks
-	private WrtSanityCheckTasklet wrtSanityCheckTasklet;
-
-	@Mock
-	private StepContribution contribution;
-
-	@Mock
-	private ChunkContext chunkContext;
+	private WrtSanityServiceImpl wrtSanityCheckTasklet;
 
 	@Mock
 	private QueryReader queryReader;
@@ -65,12 +59,15 @@ public class WrtSanityCheckTaskletTest {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void executeTest() throws FileNotFoundException, SanityCheckException, MessagingException {
+		Logger log = LogUtil.getDefaultLogger(WrtSanityServiceImpl.class);
+		
 		when(queryReader.read()).thenReturn(getDefaultQueries());
 		when(jdbcTemplate.query(anyString(), any(RowMapper.class))).thenAnswer(answer -> getDefaultQueryResult());
 
-		RepeatStatus status = wrtSanityCheckTasklet.execute(contribution, chunkContext);
+		wrtSanityCheckTasklet.execute();
 
-		assertEquals(RepeatStatus.FINISHED, status);
+		int logs = LogUtil.countLogsContaining(log, "Sanity check finished");
+		assertEquals(1, logs);
 	}
 
 	private List<Map<String, String>> getDefaultQueryResult() {
