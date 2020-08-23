@@ -6,7 +6,7 @@ The database is very large and we need to run verifications periodically. Instea
 
 ## Setup local database
 
-You can use an internal database for handling WCA data and also the batch status.
+You should an internal database for handling WCA data.
 
 In case you do not have it installed yet, you will need to get MySQL.
 
@@ -19,7 +19,7 @@ ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '';
 create database wca_development;
 ```
 
-The database `wca_development` will be populated with WCA data and also data from the batch status. If you want to change password, username or others, make sure to also change on `application-local.properties`.
+The database `wca_development` will be populated with WCA data. If you want to change password, username or others, make sure to also change on `application-local.properties`.
 
 ## Before you run this
 
@@ -42,5 +42,5 @@ It will ask you to run in sudo mode in order to execute the sql.
 
 ## Project details
 
-This project uses [Maven](https://maven.apache.org/) as the build system. It was built using [Spring Batch](https://spring.io/projects/spring-batch), an awesome framework for building batches/jobs.
+This project uses [Maven](https://maven.apache.org/) as the build system. It was built using [Spring Boot](https://spring.io/projects/spring-boot), an awesome framework also for building batches/jobs.
 
