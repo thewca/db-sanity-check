@@ -4,6 +4,8 @@ The database is very large and we need to run verifications periodically. Instea
 
 [![Build Status](https://travis-ci.com/thewca/db-sanity-check.svg?branch=main)](https://travis-ci.com/github/thewca/db-sanity-check)
 
+[![Coverage Status](https://coveralls.io/repos/github/thewca/db-sanity-check/badge.svg?branch=main)](https://coveralls.io/github/thewca/db-sanity-check?branch=main)
+
 ## Setup local database
 
 You should an internal database for handling WCA data.
