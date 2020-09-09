@@ -13,7 +13,7 @@ public class AnalysisBean extends BaseBean {
 	private List<Map<String, String>> analysis;
 
 	// Since we're using LinkedHashMap, it makes sense to assume that the keys
-	// mantain the order
+	// maintain the order
 	public List<String> getKeys() {
 		List<String> result = new ArrayList<>();
 		if (analysis.isEmpty()) {
