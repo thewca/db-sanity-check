@@ -16,7 +16,7 @@ public class AnalysisBean extends BaseBean {
 	// maintain the order
 	public List<String> getKeys() {
 		List<String> result = new ArrayList<>();
-		if (analysis.isEmpty()) {
+		if (analysis.isEmpty()) { // Extra check. It should not be called
 			return result;
 		}
 
