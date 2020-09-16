@@ -35,7 +35,7 @@ public class EmailServiceImpl implements EmailService {
 
 	@Value("${service.mail.subject}")
 	private String subject;
-	
+
 	@Value("${service.mail.logfilepath}")
 	private String logFilePath;
 
@@ -78,7 +78,7 @@ public class EmailServiceImpl implements EmailService {
 
 	private String getText(List<AnalysisBean> analysisResult) {
 		log.info("Build email content");
-		
+
 		StringBuilder sb = new StringBuilder("<h2>Sanity Check Results</h2>\n\n");
 
 		if (analysisResult.isEmpty()) {
@@ -87,8 +87,9 @@ public class EmailServiceImpl implements EmailService {
 			sb.append("<p>Found inconsistencies in ").append(analysisResult.size()).append(" topics.</p>\n\n");
 		}
 
-		for (AnalysisBean analysis : analysisResult) {
-			sb.append(String.format("<h3>[%s] %s</h3>%n", analysis.getCategory(), analysis.getTopic()));
+		for (int i = 0; i < analysisResult.size(); i++) {
+			AnalysisBean analysis = analysisResult.get(i);
+			sb.append(String.format("<h3>%s. [%s] %s</h3>%n", i + 1, analysis.getCategory(), analysis.getTopic()));
 			sb.append("<div style=\"overflow-x: auto;\">\n");
 			sb.append(" <table style=\"border: 1px solid black;\">\n");
 			sb.append("  <thead>\n");
