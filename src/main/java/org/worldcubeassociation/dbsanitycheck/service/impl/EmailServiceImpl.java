@@ -1,6 +1,7 @@
 package org.worldcubeassociation.dbsanitycheck.service.impl;
 
 import java.io.File;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -54,11 +55,13 @@ public class EmailServiceImpl implements EmailService {
 
 			helper.setFrom(mailFrom);
 			helper.setTo(InternetAddress.parse(mailTo));
-			helper.setSubject(subject);
+			LocalDate currentDate = LocalDate.now();
+			String formattedSubject = subject + " - " + currentDate.getMonth() + " " + currentDate.getYear();
+			helper.setSubject(formattedSubject);
 
 			log.info("Mail from: " + mailFrom);
 			log.info("Mail to: " + mailTo);
-			log.info("Subject: " + subject);
+			log.info("Subject: " + formattedSubject);
 
 			boolean html = true;
 			helper.setText(getText(analysisResult), html);
