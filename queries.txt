@@ -191,45 +191,55 @@ SELECT p.id, p.name as profile_name, u.name as account_name FROM Persons p
 INNER JOIN users u ON p.id=u.wca_id AND p.name<>u.name AND p.subId=1
 
 Suspicious rounds data
-1. Time limit > cutoff
+1. Time limit < cutoff
 SELECT ce.competition_id, ce.event_id, 
  CONVERT(MID(ro.time_limit, 17, 10), UNSIGNED INTEGER) time_limit, 
  CONVERT(MID(ro.cutoff, 39, 10), UNSIGNED INTEGER) cutoff
-FROM rounds as ro INNER JOIN competition_events as ce on ce.id = ro.competition_event_id
-WHERE time_limit is not NULL and ro.cutoff is not NULL
+FROM (SELECT * FROM rounds WHERE time_limit is not NULL and cutoff is not NULL) as ro 
+INNER JOIN competition_events as ce on ce.id = ro.competition_event_id
+INNER JOIN (SELECT id FROM Competitions WHERE announced_at is not NULL) as comps
+ ON ce.competition_id = comps.id
 HAVING time_limit> 0 and time_limit < cutoff
 
 Suspicious rounds data
 2. Cutoff < 5 seconds:
 SELECT ce.competition_id, ce.event_id, 
  CONVERT(MID(ro.cutoff, 39, 10), UNSIGNED INTEGER) cutoff
-FROM rounds as ro INNER JOIN competition_events as ce on ce.id = ro.competition_event_id
-WHERE ro.cutoff is not NULL and ce.event_id <> '333fm' 
-HAVING cutoff < 500
+FROM (SELECT * FROM rounds WHERE cutoff is not NULL) as ro  
+INNER JOIN (SELECT * FROM competition_events WHERE event_id <> '333fm') as ce 
+ ON ce.id = ro.competition_event_id
+INNER JOIN (SELECT id FROM Competitions WHERE announced_at is not NULL) as comps
+ ON ce.competition_id = comps.id HAVING cutoff < 500
 
 Suspicious rounds data
 3. Cutoff > 10 minutes:
 SELECT ce.competition_id, ce.event_id, 
  CONVERT(MID(ro.cutoff, 39, 10), UNSIGNED INTEGER) cutoff
-FROM rounds as ro INNER JOIN competition_events as ce on ce.id = ro.competition_event_id
-WHERE ro.cutoff is not NULL and ce.event_id <> '333mbf'
-HAVING cutoff > 60000
+FROM (SELECT * FROM rounds WHERE cutoff is not NULL) as ro  
+INNER JOIN (SELECT * FROM competition_events WHERE event_id <> '333mbf') as ce 
+ ON ce.id = ro.competition_event_id
+INNER JOIN (SELECT id FROM Competitions WHERE announced_at is not NULL) as comps
+ ON ce.competition_id = comps.id HAVING cutoff > 60000
 
 Suspicious rounds data
 4. Time limit < 10 seconds
 SELECT ce.competition_id, ce.event_id, 
  CONVERT(MID(ro.time_limit, 17, 10), UNSIGNED INTEGER) time_limit
-FROM rounds as ro INNER JOIN competition_events as ce on ce.id = ro.competition_event_id
-WHERE time_limit is not NULL
-HAVING time_limit> 0 and time_limit < 1000
+FROM (SELECT * FROM rounds WHERE time_limit is not NULL) as ro 
+INNER JOIN competition_events as ce on ce.id = ro.competition_event_id
+INNER JOIN (SELECT id FROM Competitions WHERE announced_at is not NULL) as comps
+ ON ce.competition_id = comps.id HAVING time_limit < 1000
 
 Suspicious rounds data
 5. Time limit > 10 minutes for ""fast events"":
 SELECT ce.competition_id, ce.event_id, 
  CONVERT(MID(ro.time_limit, 17, 10), UNSIGNED INTEGER) time_limit
-FROM rounds as ro INNER JOIN competition_events as ce on ce.id = ro.competition_event_id
-WHERE time_limit is not NULL AND ce.event_id in ('333', '222', '444', '333oh', 'clock', 'mega', 'pyram', 'skewb', 'sq1') 
-HAVING time_limit> 60000
+FROM (SELECT * FROM rounds WHERE time_limit is not NULL) as ro 
+INNER JOIN (SELECT * FROM competition_events WHERE event_id in (
+    '333', '222', '444', '333oh', 'clock', 'mega', 'pyram', 'skewb', 'sq1') ) as ce 
+ ON ce.id = ro.competition_event_id
+INNER JOIN (SELECT id FROM Competitions WHERE announced_at is not NULL) as comps
+ ON ce.competition_id = comps.id HAVING time_limit> 60000
 
 Consistency of Results & Persons
 1. Persons table entries without Results table entry:
