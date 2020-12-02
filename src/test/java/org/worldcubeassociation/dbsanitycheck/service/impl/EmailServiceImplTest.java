@@ -10,9 +10,12 @@ import java.util.Map;
 import java.util.Random;
 
 import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -20,6 +23,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.worldcubeassociation.dbsanitycheck.bean.AnalysisBean;
+import org.worldcubeassociation.dbsanitycheck.bean.QueryBean;
 import org.worldcubeassociation.dbsanitycheck.bean.QueryWithErrorBean;
 import org.worldcubeassociation.dbsanitycheck.util.LogUtil;
 
@@ -29,6 +33,9 @@ public class EmailServiceImplTest {
 
 	@InjectMocks
 	private EmailServiceImpl emailService;
+
+	@Captor
+	private ArgumentCaptor<MimeMessage> emailCaptor;
 
 	@Mock
 	private JavaMailSender emailSender;
@@ -58,7 +65,7 @@ public class EmailServiceImplTest {
 		when(emailSender.createMimeMessage()).thenReturn(sender.createMimeMessage());
 
 		List<AnalysisBean> analysisResult = getDefaultAnalysis();
-		List<QueryWithErrorBean> queriesWithError = new ArrayList<>();
+		List<QueryWithErrorBean> queriesWithError = getDefaultQueriesWithError();
 
 		emailService.sendEmail(analysisResult, queriesWithError);
 
@@ -80,7 +87,7 @@ public class EmailServiceImplTest {
 		int logs = LogUtil.countLogsContaining(log, "Not sending email");
 		assertEquals(1, logs);
 	}
-	
+
 	@Test
 	public void sendEmailNoResultsTest() throws MessagingException {
 		ReflectionTestUtils.setField(emailService, "sendMail", true);
@@ -125,6 +132,27 @@ public class EmailServiceImplTest {
 		}
 
 		return analysisResult;
+	}
+
+	private List<QueryWithErrorBean> getDefaultQueriesWithError() {
+		List<QueryWithErrorBean> result = new ArrayList<>();
+
+		int topics = 1 + random.nextInt(MAX_TOPICS_FOUND);
+
+		for (int i = 0; i < topics; i++) {
+			QueryWithErrorBean queryWithError = new QueryWithErrorBean();
+
+			QueryBean queryBean = new QueryBean();
+			queryBean.setCategory("Category " + (MAX_TOPICS_FOUND + i)); // Just to have different numbers
+			queryBean.setTopic("Topic " + (MAX_TOPICS_FOUND + i));
+
+			queryWithError.setQueryBean(queryBean);
+			queryWithError.setError("Error " + i);
+
+			result.add(queryWithError);
+		}
+
+		return result;
 	}
 
 }
