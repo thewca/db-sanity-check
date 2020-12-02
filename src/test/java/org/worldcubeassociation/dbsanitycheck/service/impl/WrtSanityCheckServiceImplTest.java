@@ -31,10 +31,10 @@ import org.worldcubeassociation.dbsanitycheck.util.LogUtil;
 
 import ch.qos.logback.classic.Logger;
 
-public class WrtSanityServiceImplTest {
+public class WrtSanityCheckServiceImplTest {
 
 	@InjectMocks
-	private WrtSanityServiceImpl wrtSanityCheckTasklet;
+	private WrtSanityCheckServiceImpl wrtSanityCheckTasklet;
 
 	@Mock
 	private QueryReader queryReader;
@@ -61,7 +61,7 @@ public class WrtSanityServiceImplTest {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void bestCaseScenarioTest() throws FileNotFoundException, SanityCheckException, MessagingException {
-		Logger log = LogUtil.getDefaultLogger(WrtSanityServiceImpl.class);
+		Logger log = LogUtil.getDefaultLogger(WrtSanityCheckServiceImpl.class);
 
 		when(queryReader.read()).thenReturn(getDefaultQueries());
 		when(jdbcTemplate.query(anyString(), any(RowMapper.class))).thenAnswer(answer -> getDefaultQueryResult());
@@ -75,7 +75,7 @@ public class WrtSanityServiceImplTest {
 	@Test
 	@SuppressWarnings("unchecked")
 	public void queryWithErrorTest() throws FileNotFoundException, SanityCheckException, MessagingException {
-		Logger log = LogUtil.getDefaultLogger(WrtSanityServiceImpl.class);
+		Logger log = LogUtil.getDefaultLogger(WrtSanityCheckServiceImpl.class);
 
 		BadSqlGrammarException exception = new BadSqlGrammarException(null, "Select * from A inner join B on", null);
 

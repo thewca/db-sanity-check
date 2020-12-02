@@ -25,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Component
-public class WrtSanityServiceImpl implements WrtSanityCheckService {
+public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
 
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
