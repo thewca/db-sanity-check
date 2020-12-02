@@ -10,10 +10,12 @@ import java.util.Map;
 import javax.mail.MessagingException;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.worldcubeassociation.dbsanitycheck.bean.AnalysisBean;
 import org.worldcubeassociation.dbsanitycheck.bean.QueryBean;
+import org.worldcubeassociation.dbsanitycheck.bean.QueryWithErrorBean;
 import org.worldcubeassociation.dbsanitycheck.exception.SanityCheckException;
 import org.worldcubeassociation.dbsanitycheck.reader.QueryReader;
 import org.worldcubeassociation.dbsanitycheck.service.EmailService;
@@ -39,6 +41,8 @@ public class WrtSanityServiceImpl implements WrtSanityCheckService {
 
 	private List<QueryBean> queries = new ArrayList<>();
 
+	private List<QueryWithErrorBean> queriesWithError = new ArrayList<>();
+
 	@Override
 	public void execute() throws FileNotFoundException, SanityCheckException, MessagingException {
 		log.info("WRT Sanity Check");
@@ -51,8 +55,8 @@ public class WrtSanityServiceImpl implements WrtSanityCheckService {
 
 		log.info("All queries executed");
 
-		emailService.sendEmail(analysisResult);
-		
+		emailService.sendEmail(analysisResult, queriesWithError);
+
 		log.info("Sanity check finished");
 	}
 
@@ -88,19 +92,30 @@ public class WrtSanityServiceImpl implements WrtSanityCheckService {
 		log.info(" ===== " + topic + " ===== ");
 		log.info(query);
 
-		List<Map<String, String>> result = jdbcTemplate.query(query, (rs, rowNum) -> {
-			// Makes the result set into 1 result
-			Map<String, String> out = new LinkedHashMap<>();
-			ResultSetMetaData rsmd = rs.getMetaData();
-			int columnCount = rsmd.getColumnCount();
+		List<Map<String, String>> result;
 
-			// The column count starts from 1
-			for (int i = 1; i <= columnCount; i++) {
-				String name = rsmd.getColumnName(i);
-				out.put(name, rs.getString(i));
-			}
-			return out;
-		});
+		try {
+			result = jdbcTemplate.query(query, (rs, rowNum) -> {
+				// Makes the result set into 1 result
+				Map<String, String> out = new LinkedHashMap<>();
+				ResultSetMetaData rsmd = rs.getMetaData();
+				int columnCount = rsmd.getColumnCount();
+
+				// The column count starts from 1
+				for (int i = 1; i <= columnCount; i++) {
+					String name = rsmd.getColumnName(i);
+					out.put(name, rs.getString(i));
+				}
+				return out;
+			});
+		} catch (DataAccessException e) {
+			log.error("Could not execute the query {}\n{}", query, e.getMessage());
+			QueryWithErrorBean queryWithErrorBean = new QueryWithErrorBean();
+			queryWithErrorBean.setQueryBean(queryBean);
+			queryWithErrorBean.setError(e.getMessage());
+			queriesWithError.add(queryWithErrorBean);
+			return;
+		}
 
 		if (!result.isEmpty()) {
 			log.info("* Found {} results for {}", result.size(), topic);

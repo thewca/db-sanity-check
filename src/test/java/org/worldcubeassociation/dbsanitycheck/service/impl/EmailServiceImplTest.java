@@ -20,6 +20,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.worldcubeassociation.dbsanitycheck.bean.AnalysisBean;
+import org.worldcubeassociation.dbsanitycheck.bean.QueryWithErrorBean;
 import org.worldcubeassociation.dbsanitycheck.util.LogUtil;
 
 import ch.qos.logback.classic.Logger;
@@ -57,8 +58,9 @@ public class EmailServiceImplTest {
 		when(emailSender.createMimeMessage()).thenReturn(sender.createMimeMessage());
 
 		List<AnalysisBean> analysisResult = getDefaultAnalysis();
+		List<QueryWithErrorBean> queriesWithError = new ArrayList<>();
 
-		emailService.sendEmail(analysisResult);
+		emailService.sendEmail(analysisResult, queriesWithError);
 
 		int logs = LogUtil.countLogsContaining(log, "Email sent.");
 		assertEquals(1, logs);
@@ -71,8 +73,9 @@ public class EmailServiceImplTest {
 		Logger log = LogUtil.getDefaultLogger(EmailServiceImpl.class);
 
 		List<AnalysisBean> analysisResult = getDefaultAnalysis();
+		List<QueryWithErrorBean> queriesWithError = new ArrayList<>();
 
-		emailService.sendEmail(analysisResult);
+		emailService.sendEmail(analysisResult, queriesWithError);
 
 		int logs = LogUtil.countLogsContaining(log, "Not sending email");
 		assertEquals(1, logs);
@@ -88,8 +91,9 @@ public class EmailServiceImplTest {
 		when(emailSender.createMimeMessage()).thenReturn(sender.createMimeMessage());
 
 		List<AnalysisBean> analysisResult = new ArrayList<>();
+		List<QueryWithErrorBean> queriesWithError = new ArrayList<>();
 
-		emailService.sendEmail(analysisResult);
+		emailService.sendEmail(analysisResult, queriesWithError);
 
 		int logs = LogUtil.countLogsContaining(log, "Email sent.");
 		assertEquals(1, logs);
