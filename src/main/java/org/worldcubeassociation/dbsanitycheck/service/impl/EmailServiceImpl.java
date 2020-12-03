@@ -17,6 +17,8 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.worldcubeassociation.dbsanitycheck.bean.AnalysisBean;
+import org.worldcubeassociation.dbsanitycheck.bean.QueryBean;
+import org.worldcubeassociation.dbsanitycheck.bean.QueryWithErrorBean;
 import org.worldcubeassociation.dbsanitycheck.service.EmailService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -44,7 +46,8 @@ public class EmailServiceImpl implements EmailService {
 	private JavaMailSender emailSender;
 
 	@Override
-	public void sendEmail(List<AnalysisBean> analysisResult) throws MessagingException {
+	public void sendEmail(List<AnalysisBean> analysisResult, List<QueryWithErrorBean> queriesWithError)
+			throws MessagingException {
 		if (sendMail) {
 			log.info("Sending email with the analysis");
 
@@ -64,7 +67,7 @@ public class EmailServiceImpl implements EmailService {
 			log.info("Subject: " + formattedSubject);
 
 			boolean html = true;
-			helper.setText(getText(analysisResult), html);
+			helper.setText(getText(analysisResult, queriesWithError), html);
 
 			log.info("Attach log file");
 			FileSystemResource file = new FileSystemResource(new File(logFilePath));
@@ -79,14 +82,23 @@ public class EmailServiceImpl implements EmailService {
 
 	}
 
-	private String getText(List<AnalysisBean> analysisResult) {
+	private String getText(List<AnalysisBean> analysisResult, List<QueryWithErrorBean> queriesWithError) {
 		log.info("Build email content");
 
 		StringBuilder sb = new StringBuilder("<h2>Sanity Check Results</h2>\n\n");
 
-		if (analysisResult.isEmpty()) {
+		if (analysisResult.isEmpty() && queriesWithError.isEmpty()) {
 			sb.append("<p>No results to show</p>\n");
-		} else {
+		}
+
+		addAnalysis(analysisResult, sb);
+		addErrors(queriesWithError, sb);
+
+		return sb.toString();
+	}
+
+	private void addAnalysis(List<AnalysisBean> analysisResult, StringBuilder sb) {
+		if (!analysisResult.isEmpty()) {
 			sb.append("<p>Found inconsistencies in ").append(analysisResult.size()).append(" topics.</p>\n\n");
 		}
 
@@ -115,8 +127,22 @@ public class EmailServiceImpl implements EmailService {
 			sb.append("</div>\n");
 			sb.append("<br>\n\n");
 		}
+	}
 
-		return sb.toString();
+	private void addErrors(List<QueryWithErrorBean> queriesWithError, StringBuilder sb) {
+		if (!queriesWithError.isEmpty()) {
+			sb.append("<p>Found errors in ").append(queriesWithError.size()).append(" queries.</p>\n\n");
+		}
+
+		for (int i = 0; i < queriesWithError.size(); i++) {
+			QueryWithErrorBean queryWithErrorBean = queriesWithError.get(i);
+			QueryBean queryBean = queryWithErrorBean.getQueryBean();
+			sb.append(String.format("<h3>%s. [%s] %s</h3>%n", i + 1, queryBean.getCategory(), queryBean.getTopic()));
+			sb.append(String.format("<code>%s</code>\n", queryBean.getQuery()));
+			sb.append(String.format("<p><b>Reason:</b> %s</p>\n", queryWithErrorBean.getError()));
+			sb.append("<br>\n\n");
+		}
+
 	}
 
 }

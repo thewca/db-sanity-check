@@ -1,6 +1,7 @@
 package org.worldcubeassociation.dbsanitycheck.service.impl;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -19,6 +20,7 @@ import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.worldcubeassociation.dbsanitycheck.bean.QueryBean;
@@ -29,10 +31,10 @@ import org.worldcubeassociation.dbsanitycheck.util.LogUtil;
 
 import ch.qos.logback.classic.Logger;
 
-public class WrtSanityServiceImplTest {
+public class WrtSanityCheckServiceImplTest {
 
 	@InjectMocks
-	private WrtSanityServiceImpl wrtSanityCheckTasklet;
+	private WrtSanityCheckServiceImpl wrtSanityCheckTasklet;
 
 	@Mock
 	private QueryReader queryReader;
@@ -58,9 +60,9 @@ public class WrtSanityServiceImplTest {
 
 	@Test
 	@SuppressWarnings("unchecked")
-	public void executeTest() throws FileNotFoundException, SanityCheckException, MessagingException {
-		Logger log = LogUtil.getDefaultLogger(WrtSanityServiceImpl.class);
-		
+	public void bestCaseScenarioTest() throws FileNotFoundException, SanityCheckException, MessagingException {
+		Logger log = LogUtil.getDefaultLogger(WrtSanityCheckServiceImpl.class);
+
 		when(queryReader.read()).thenReturn(getDefaultQueries());
 		when(jdbcTemplate.query(anyString(), any(RowMapper.class))).thenAnswer(answer -> getDefaultQueryResult());
 
@@ -68,6 +70,23 @@ public class WrtSanityServiceImplTest {
 
 		int logs = LogUtil.countLogsContaining(log, "Sanity check finished");
 		assertEquals(1, logs);
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	public void queryWithErrorTest() throws FileNotFoundException, SanityCheckException, MessagingException {
+		Logger log = LogUtil.getDefaultLogger(WrtSanityCheckServiceImpl.class);
+
+		BadSqlGrammarException exception = new BadSqlGrammarException(null, "Select * from A inner join B on", null);
+
+		when(queryReader.read()).thenReturn(getDefaultQueries());
+		when(jdbcTemplate.query(anyString(), any(RowMapper.class))).thenThrow(exception);
+
+		wrtSanityCheckTasklet.execute();
+
+		// There should be some warning about bad grammar
+		List<String> logs = LogUtil.getLogsContaining(log, "Could not execute the query");
+		assertFalse(logs.isEmpty());
 	}
 
 	private List<Map<String, String>> getDefaultQueryResult() {
