@@ -14,11 +14,9 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.worldcubeassociation.dbsanitycheck.bean.AnalysisBean;
-import org.worldcubeassociation.dbsanitycheck.bean.QueryBean;
-import org.worldcubeassociation.dbsanitycheck.bean.QueryWithErrorBean;
+import org.worldcubeassociation.dbsanitycheck.bean.SanityCheckWithErrorBean;
 import org.worldcubeassociation.dbsanitycheck.exception.SanityCheckException;
 import org.worldcubeassociation.dbsanitycheck.model.SanityCheck;
-import org.worldcubeassociation.dbsanitycheck.reader.QueryReader;
 import org.worldcubeassociation.dbsanitycheck.repository.SanityCheckRepository;
 import org.worldcubeassociation.dbsanitycheck.service.EmailService;
 import org.worldcubeassociation.dbsanitycheck.service.WrtSanityCheckService;
@@ -34,14 +32,14 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
 
 	@Autowired
 	private EmailService emailService;
-	
+
 	@Autowired
 	private SanityCheckRepository sanityCheckRepository;
 
 	// Hold inconsistencies
 	private List<AnalysisBean> analysisResult = new ArrayList<>();
 
-	private List<QueryWithErrorBean> queriesWithError = new ArrayList<>();
+	private List<SanityCheckWithErrorBean> queriesWithError = new ArrayList<>();
 
 	@Override
 	public void execute() throws FileNotFoundException, SanityCheckException, MessagingException {
@@ -52,20 +50,20 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
 		log.info("Found {} queries", sanityChecks.size());
 
 		executeSanityChecks(sanityChecks);
-		//showResults();
+		showResults();
 
-		//log.info("All queries executed");
+		log.info("All queries executed");
 
-		//emailService.sendEmail(analysisResult, queriesWithError);
+		emailService.sendEmail(analysisResult, queriesWithError);
 
-		//log.info("Sanity check finished");
+		log.info("Sanity check finished");
 	}
 
 	private void executeSanityChecks(List<SanityCheck> sanityChecks) {
 		log.info("Execute queries");
 
 		String prevCategory = null;
-		for (SanityCheck sanityCheck: sanityChecks) {
+		for (SanityCheck sanityCheck : sanityChecks) {
 
 			// We log at each new category
 			String category = sanityCheck.getSanityCheckCategory().getName();
@@ -74,7 +72,7 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
 				prevCategory = category;
 			}
 
-			//generalAnalysis(sanityCheck);
+			generalAnalysis(sanityCheck);
 		}
 	}
 
@@ -85,17 +83,19 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
 	 * @param topic defines the current operation
 	 * @param query is the sql query
 	 */
-	private void generalAnalysis(QueryBean queryBean) {
-		String category = queryBean.getCategory();
-		String topic = queryBean.getTopic();
-		String query = queryBean.getQuery();
+	private void generalAnalysis(SanityCheck sanityCheck) {
+		String topic = sanityCheck.getTopic();
+		String query = sanityCheck.getQuery();
+		
+		// With good constraints, this won't throw a null pointer
+		String category = sanityCheck.getSanityCheckCategory().getName();
 
-		log.info(" ===== " + topic + " ===== ");
-		log.info(query);
-
-		List<Map<String, String>> result;
-
+		List<Map<String, String>> result = new ArrayList<>();
 		try {
+
+			log.info(" ===== " + topic + " ===== ");
+			log.info(query);
+
 			result = jdbcTemplate.query(query, (rs, rowNum) -> {
 				// Makes the result set into 1 result
 				Map<String, String> out = new LinkedHashMap<>();
@@ -111,10 +111,10 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
 			});
 		} catch (DataAccessException e) {
 			log.error("Could not execute the query {}\n{}", query, e.getMessage());
-			QueryWithErrorBean queryWithErrorBean = new QueryWithErrorBean();
-			queryWithErrorBean.setQueryBean(queryBean);
-			queryWithErrorBean.setError(e.getMessage());
-			queriesWithError.add(queryWithErrorBean);
+			SanityCheckWithErrorBean sanityCheckWithErrorBean = new SanityCheckWithErrorBean();
+			sanityCheckWithErrorBean.setSanityCheck(sanityCheck);
+			sanityCheckWithErrorBean.setError(e.getMessage());
+			queriesWithError.add(sanityCheckWithErrorBean);
 			return;
 		}
 

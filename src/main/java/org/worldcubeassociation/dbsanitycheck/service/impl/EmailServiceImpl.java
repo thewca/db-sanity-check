@@ -17,8 +17,8 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.worldcubeassociation.dbsanitycheck.bean.AnalysisBean;
-import org.worldcubeassociation.dbsanitycheck.bean.QueryBean;
-import org.worldcubeassociation.dbsanitycheck.bean.QueryWithErrorBean;
+import org.worldcubeassociation.dbsanitycheck.bean.SanityCheckWithErrorBean;
+import org.worldcubeassociation.dbsanitycheck.model.SanityCheck;
 import org.worldcubeassociation.dbsanitycheck.service.EmailService;
 
 import lombok.extern.slf4j.Slf4j;
@@ -46,7 +46,7 @@ public class EmailServiceImpl implements EmailService {
 	private JavaMailSender emailSender;
 
 	@Override
-	public void sendEmail(List<AnalysisBean> analysisResult, List<QueryWithErrorBean> queriesWithError)
+	public void sendEmail(List<AnalysisBean> analysisResult, List<SanityCheckWithErrorBean> queriesWithError)
 			throws MessagingException {
 		if (sendMail) {
 			log.info("Sending email with the analysis");
@@ -82,7 +82,7 @@ public class EmailServiceImpl implements EmailService {
 
 	}
 
-	private String getText(List<AnalysisBean> analysisResult, List<QueryWithErrorBean> queriesWithError) {
+	private String getText(List<AnalysisBean> analysisResult, List<SanityCheckWithErrorBean> queriesWithError) {
 		log.info("Build email content");
 
 		StringBuilder sb = new StringBuilder("<h2>Sanity Check Results</h2>\n\n");
@@ -129,16 +129,17 @@ public class EmailServiceImpl implements EmailService {
 		}
 	}
 
-	private void addErrors(List<QueryWithErrorBean> queriesWithError, StringBuilder sb) {
+	private void addErrors(List<SanityCheckWithErrorBean> queriesWithError, StringBuilder sb) {
 		if (!queriesWithError.isEmpty()) {
 			sb.append("<p>Found errors in ").append(queriesWithError.size()).append(" queries.</p>\n\n");
 		}
 
 		for (int i = 0; i < queriesWithError.size(); i++) {
-			QueryWithErrorBean queryWithErrorBean = queriesWithError.get(i);
-			QueryBean queryBean = queryWithErrorBean.getQueryBean();
-			sb.append(String.format("<h3>%s. [%s] %s</h3>%n", i + 1, queryBean.getCategory(), queryBean.getTopic()));
-			sb.append(String.format("<code>%s</code>\n", queryBean.getQuery()));
+			SanityCheckWithErrorBean queryWithErrorBean = queriesWithError.get(i);
+			SanityCheck sanityCheck = queryWithErrorBean.getSanityCheck();
+			sb.append(String.format("<h3>%s. [%s] %s</h3>%n", i + 1, sanityCheck.getSanityCheckCategory().getName(),
+					sanityCheck.getTopic()));
+			sb.append(String.format("<code>%s</code>\n", sanityCheck.getQuery()));
 			sb.append(String.format("<p><b>Reason:</b> %s</p>\n", queryWithErrorBean.getError()));
 			sb.append("<br>\n\n");
 		}

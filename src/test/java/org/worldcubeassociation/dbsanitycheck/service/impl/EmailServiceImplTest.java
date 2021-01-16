@@ -24,7 +24,7 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.worldcubeassociation.dbsanitycheck.bean.AnalysisBean;
 import org.worldcubeassociation.dbsanitycheck.bean.QueryBean;
-import org.worldcubeassociation.dbsanitycheck.bean.QueryWithErrorBean;
+import org.worldcubeassociation.dbsanitycheck.bean.SanityCheckWithErrorBean;
 import org.worldcubeassociation.dbsanitycheck.util.LogUtil;
 
 import ch.qos.logback.classic.Logger;
@@ -65,7 +65,7 @@ public class EmailServiceImplTest {
 		when(emailSender.createMimeMessage()).thenReturn(sender.createMimeMessage());
 
 		List<AnalysisBean> analysisResult = getDefaultAnalysis();
-		List<QueryWithErrorBean> queriesWithError = getDefaultQueriesWithError();
+		List<SanityCheckWithErrorBean> queriesWithError = getDefaultQueriesWithError();
 
 		emailService.sendEmail(analysisResult, queriesWithError);
 
@@ -80,7 +80,7 @@ public class EmailServiceImplTest {
 		Logger log = LogUtil.getDefaultLogger(EmailServiceImpl.class);
 
 		List<AnalysisBean> analysisResult = getDefaultAnalysis();
-		List<QueryWithErrorBean> queriesWithError = new ArrayList<>();
+		List<SanityCheckWithErrorBean> queriesWithError = new ArrayList<>();
 
 		emailService.sendEmail(analysisResult, queriesWithError);
 
@@ -98,7 +98,7 @@ public class EmailServiceImplTest {
 		when(emailSender.createMimeMessage()).thenReturn(sender.createMimeMessage());
 
 		List<AnalysisBean> analysisResult = new ArrayList<>();
-		List<QueryWithErrorBean> queriesWithError = new ArrayList<>();
+		List<SanityCheckWithErrorBean> queriesWithError = new ArrayList<>();
 
 		emailService.sendEmail(analysisResult, queriesWithError);
 
@@ -134,13 +134,13 @@ public class EmailServiceImplTest {
 		return analysisResult;
 	}
 
-	private List<QueryWithErrorBean> getDefaultQueriesWithError() {
-		List<QueryWithErrorBean> result = new ArrayList<>();
+	private List<SanityCheckWithErrorBean> getDefaultQueriesWithError() {
+		List<SanityCheckWithErrorBean> result = new ArrayList<>();
 
 		int topics = 1 + random.nextInt(MAX_TOPICS_FOUND);
 
 		for (int i = 0; i < topics; i++) {
-			QueryWithErrorBean queryWithError = new QueryWithErrorBean();
+			SanityCheckWithErrorBean queryWithError = new SanityCheckWithErrorBean();
 
 			QueryBean queryBean = new QueryBean();
 			queryBean.setCategory("Category " + (MAX_TOPICS_FOUND + i)); // Just to have different numbers
