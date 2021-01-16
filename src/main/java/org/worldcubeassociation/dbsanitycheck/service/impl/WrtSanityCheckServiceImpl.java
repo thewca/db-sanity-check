@@ -68,13 +68,13 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
 		for (SanityCheck sanityCheck: sanityChecks) {
 
 			// We log at each new category
-			//String category = sanityCheck.getCategory();
-			//if (prevCategory == null || !prevCategory.equals(category)) {
-			//	log.info(" ========== Category = {} ========== ", category);
-			//	prevCategory = category;
-			//}
+			String category = sanityCheck.getSanityCheckCategory().getName();
+			if (prevCategory == null || !prevCategory.equals(category)) {
+				log.info(" ========== Category = {} ========== ", category);
+				prevCategory = category;
+			}
 
-			//generalAnalysis(query);
+			//generalAnalysis(sanityCheck);
 		}
 	}
 
