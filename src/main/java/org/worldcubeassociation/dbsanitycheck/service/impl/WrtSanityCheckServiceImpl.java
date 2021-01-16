@@ -17,7 +17,9 @@ import org.worldcubeassociation.dbsanitycheck.bean.AnalysisBean;
 import org.worldcubeassociation.dbsanitycheck.bean.QueryBean;
 import org.worldcubeassociation.dbsanitycheck.bean.QueryWithErrorBean;
 import org.worldcubeassociation.dbsanitycheck.exception.SanityCheckException;
+import org.worldcubeassociation.dbsanitycheck.model.SanityCheck;
 import org.worldcubeassociation.dbsanitycheck.reader.QueryReader;
+import org.worldcubeassociation.dbsanitycheck.repository.SanityCheckRepository;
 import org.worldcubeassociation.dbsanitycheck.service.EmailService;
 import org.worldcubeassociation.dbsanitycheck.service.WrtSanityCheckService;
 
@@ -31,15 +33,13 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
 	private JdbcTemplate jdbcTemplate;
 
 	@Autowired
-	private QueryReader queryReader;
-
-	@Autowired
 	private EmailService emailService;
+	
+	@Autowired
+	private SanityCheckRepository sanityCheckRepository;
 
 	// Hold inconsistencies
 	private List<AnalysisBean> analysisResult = new ArrayList<>();
-
-	private List<QueryBean> queries = new ArrayList<>();
 
 	private List<QueryWithErrorBean> queriesWithError = new ArrayList<>();
 
@@ -48,32 +48,33 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
 		log.info("WRT Sanity Check");
 
 		// Read queryes
-		queries = queryReader.read();
+		List<SanityCheck> sanityChecks = sanityCheckRepository.findAll();
+		log.info("Found {} queries", sanityChecks.size());
 
-		executeQueries();
-		showResults();
+		executeSanityChecks(sanityChecks);
+		//showResults();
 
-		log.info("All queries executed");
+		//log.info("All queries executed");
 
-		emailService.sendEmail(analysisResult, queriesWithError);
+		//emailService.sendEmail(analysisResult, queriesWithError);
 
-		log.info("Sanity check finished");
+		//log.info("Sanity check finished");
 	}
 
-	private void executeQueries() {
+	private void executeSanityChecks(List<SanityCheck> sanityChecks) {
 		log.info("Execute queries");
 
 		String prevCategory = null;
-		for (QueryBean query : queries) {
+		for (SanityCheck sanityCheck: sanityChecks) {
 
 			// We log at each new category
-			String category = query.getCategory();
-			if (prevCategory == null || !prevCategory.equals(category)) {
-				log.info(" ========== Category = {} ========== ", category);
-				prevCategory = category;
-			}
+			//String category = sanityCheck.getCategory();
+			//if (prevCategory == null || !prevCategory.equals(category)) {
+			//	log.info(" ========== Category = {} ========== ", category);
+			//	prevCategory = category;
+			//}
 
-			generalAnalysis(query);
+			//generalAnalysis(query);
 		}
 	}
 
