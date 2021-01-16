@@ -4,13 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
-@Getter
-@Setter
-public class AnalysisBean extends BaseBean {
+@Data
+public class AnalysisBean {
 	private List<Map<String, String>> analysis;
+	private String category;
+	private String topic;
 
 	// Since we're using LinkedHashMap, it makes sense to assume that the keys
 	// maintain the order
