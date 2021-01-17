@@ -3,13 +3,12 @@ package org.worldcubeassociation.dbsanitycheck.service.impl;
 import java.io.File;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
@@ -115,10 +114,11 @@ public class EmailServiceImpl implements EmailService {
 			sb.append("\n   </tr>\n");
 			sb.append("  </thead>\n");
 			sb.append("  <tbody>\n");
-			for (Map<String, String> item : analysis.getAnalysis()) {
+			for (JSONObject item : analysis.getAnalysis()) {
 				sb.append("   <tr>\n");
-				for (Entry<String, String> entry : item.entrySet()) {
-					sb.append("    <td style=\"border: 1px solid black;\">").append(entry.getValue()).append("</td>\n");
+				for (int j = 0; j < item.names().length(); j++) {
+					sb.append("    <td style=\"border: 1px solid black;\">").append(item.get(item.names().getString(j)))
+							.append("</td>\n");
 				}
 				sb.append("   </tr>\n");
 			}

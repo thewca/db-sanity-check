@@ -1,14 +1,16 @@
 package org.worldcubeassociation.dbsanitycheck.bean;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
+
+import org.json.JSONObject;
 
 import lombok.Data;
 
 @Data
 public class AnalysisBean {
-	private List<Map<String, String>> analysis;
+	private List<JSONObject> analysis;
 	private String category;
 	private String topic;
 

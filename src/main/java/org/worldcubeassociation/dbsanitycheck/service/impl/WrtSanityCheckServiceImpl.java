@@ -3,12 +3,12 @@ package org.worldcubeassociation.dbsanitycheck.service.impl;
 import java.io.FileNotFoundException;
 import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.mail.MessagingException;
 
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -17,6 +17,7 @@ import org.worldcubeassociation.dbsanitycheck.bean.AnalysisBean;
 import org.worldcubeassociation.dbsanitycheck.bean.SanityCheckWithErrorBean;
 import org.worldcubeassociation.dbsanitycheck.exception.SanityCheckException;
 import org.worldcubeassociation.dbsanitycheck.model.SanityCheck;
+import org.worldcubeassociation.dbsanitycheck.model.SanityCheckExclusion;
 import org.worldcubeassociation.dbsanitycheck.repository.SanityCheckRepository;
 import org.worldcubeassociation.dbsanitycheck.service.EmailService;
 import org.worldcubeassociation.dbsanitycheck.service.WrtSanityCheckService;
@@ -105,7 +106,7 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
 		// With good constraints, this won't throw a null pointer
 		String category = sanityCheck.getSanityCheckCategory().getName();
 
-		List<Map<String, String>> result = new ArrayList<>();
+		List<JSONObject> result = new ArrayList<>();
 		try {
 
 			log.info(" ===== " + topic + " ===== ");
@@ -117,7 +118,7 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
 
 			result = jdbcTemplate.query(query, (rs, rowNum) -> {
 				// Makes the result set into 1 result
-				Map<String, String> out = new LinkedHashMap<>();
+				JSONObject out = new JSONObject();
 				ResultSetMetaData rsmd = rs.getMetaData();
 				int columnCount = rsmd.getColumnCount();
 
@@ -128,6 +129,8 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
 				}
 				return out;
 			});
+
+			removeExclusions(result, sanityCheck);
 		} catch (Exception e) {
 			log.error("Could not execute the query {}\n{}", query, e.getMessage());
 			SanityCheckWithErrorBean sanityCheckWithErrorBean = new SanityCheckWithErrorBean();
@@ -149,17 +152,24 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
 		}
 	}
 
+	private void removeExclusions(List<JSONObject> result, SanityCheck sanityCheck) {
+		List<JSONObject> exclusions = sanityCheck.getExclusions().stream().map(SanityCheckExclusion::getExclusion)
+				.map(JSONObject::new).collect(Collectors.toList());
+		exclusions.forEach(it -> {
+			result.forEach(it2 -> {
+				if (it.equals(it2)) {
+					log.info("Exclusion found", it);
+				}
+			});
+		});
+		log.info("" + exclusions);
+
+	}
+
 	private void showResults() {
 		analysisResult.forEach(item -> {
 			log.warn(" ** Inconsistency at [{}] {}", item.getCategory(), item.getTopic());
-			item.getAnalysis().stream().forEach(this::logMap);
+			item.getAnalysis().stream().forEach(it -> log.info("" + it));
 		});
 	}
-
-	// LinkedHashMap has a nice toString. We just remove { and } from the edges.
-	private void logMap(Map<String, String> analysis) {
-		String str = analysis.toString();
-		log.info(str.substring(1, str.length() - 1));
-	}
-
 }
