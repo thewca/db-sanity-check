@@ -18,7 +18,7 @@ import lombok.Data;
 @Table(name = "sanity_checks")
 public class SanityCheck {
 	@Id
-	private Long id;
+	private Integer id;
 
 	private String topic;
 
@@ -27,7 +27,7 @@ public class SanityCheck {
 	private String query;
 
 	@Column(name = "sanity_check_category_id", insertable = false, updatable = false)
-	private Long sanityCheckCategoryId;
+	private Integer sanityCheckCategoryId;
 
 	@OneToOne
 	@JoinColumn(name = "sanity_check_category_id", referencedColumnName = "id")

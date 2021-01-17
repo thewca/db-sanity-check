@@ -1,6 +1,5 @@
 package org.worldcubeassociation.dbsanitycheck.service.impl;
 
-import java.io.FileNotFoundException;
 import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +14,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.worldcubeassociation.dbsanitycheck.bean.AnalysisBean;
 import org.worldcubeassociation.dbsanitycheck.bean.SanityCheckWithErrorBean;
-import org.worldcubeassociation.dbsanitycheck.exception.SanityCheckException;
 import org.worldcubeassociation.dbsanitycheck.model.SanityCheck;
 import org.worldcubeassociation.dbsanitycheck.model.SanityCheckExclusion;
 import org.worldcubeassociation.dbsanitycheck.repository.SanityCheckRepository;
@@ -43,7 +41,7 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
 	private List<SanityCheckWithErrorBean> queriesWithError = new ArrayList<>();
 
 	@Override
-	public void execute() throws FileNotFoundException, SanityCheckException, MessagingException {
+	public void execute() throws MessagingException {
 		log.info("WRT Sanity Check");
 
 		log.info("Reading queries");

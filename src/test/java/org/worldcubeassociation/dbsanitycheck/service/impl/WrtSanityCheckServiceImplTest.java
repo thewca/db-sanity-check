@@ -15,17 +15,21 @@ import java.util.Random;
 
 import javax.mail.MessagingException;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
-import org.worldcubeassociation.dbsanitycheck.bean.QueryBean;
 import org.worldcubeassociation.dbsanitycheck.exception.SanityCheckException;
-import org.worldcubeassociation.dbsanitycheck.reader.QueryReader;
+import org.worldcubeassociation.dbsanitycheck.model.SanityCheck;
+import org.worldcubeassociation.dbsanitycheck.model.SanityCheckCategory;
+import org.worldcubeassociation.dbsanitycheck.repository.SanityCheckRepository;
 import org.worldcubeassociation.dbsanitycheck.service.EmailService;
 import org.worldcubeassociation.dbsanitycheck.util.LogUtil;
 
@@ -37,7 +41,7 @@ public class WrtSanityCheckServiceImplTest {
 	private WrtSanityCheckServiceImpl wrtSanityCheckTasklet;
 
 	@Mock
-	private QueryReader queryReader;
+	private SanityCheckRepository sanityCheckRepository;
 
 	@Mock
 	private EmailService emailService;
@@ -60,10 +64,10 @@ public class WrtSanityCheckServiceImplTest {
 
 	@Test
 	@SuppressWarnings("unchecked")
-	public void bestCaseScenarioTest() throws FileNotFoundException, SanityCheckException, MessagingException {
+	public void bestCaseScenarioTest() throws MessagingException {
 		Logger log = LogUtil.getDefaultLogger(WrtSanityCheckServiceImpl.class);
 
-		when(queryReader.read()).thenReturn(getDefaultQueries());
+		when(sanityCheckRepository.findAll(any(Sort.class))).thenReturn(getDefaultSanityChecks());
 		when(jdbcTemplate.query(anyString(), any(RowMapper.class))).thenAnswer(answer -> getDefaultQueryResult());
 
 		wrtSanityCheckTasklet.execute();
@@ -74,12 +78,12 @@ public class WrtSanityCheckServiceImplTest {
 
 	@Test
 	@SuppressWarnings("unchecked")
-	public void queryWithErrorTest() throws FileNotFoundException, SanityCheckException, MessagingException {
+	public void queryWithErrorTest() {
 		Logger log = LogUtil.getDefaultLogger(WrtSanityCheckServiceImpl.class);
 
 		BadSqlGrammarException exception = new BadSqlGrammarException(null, "Select * from A inner join B on", null);
 
-		when(queryReader.read()).thenReturn(getDefaultQueries());
+		when(queryReader.read()).thenReturn(getDefaultSanityChecks());
 		when(jdbcTemplate.query(anyString(), any(RowMapper.class))).thenThrow(exception);
 
 		wrtSanityCheckTasklet.execute();
@@ -89,13 +93,13 @@ public class WrtSanityCheckServiceImplTest {
 		assertFalse(logs.isEmpty());
 	}
 
-	private List<Map<String, String>> getDefaultQueryResult() {
-		List<Map<String, String>> result = new ArrayList<>();
+	private List<JSONObject> getDefaultQueryResult() throws JSONException {
+		List<JSONObject> result = new ArrayList<>();
 
 		int numberOfResults = random.nextInt(MAX_QUERY_RESULT);
 		int numberOfColumns = 1 + random.nextInt(MAX_NUMBER_OF_COLUMNS);
 		for (int i = 0; i < numberOfResults; i++) {
-			Map<String, String> map = new LinkedHashMap<>();
+			JSONObject map = new JSONObject();
 			for (int j = 0; j < numberOfColumns; j++) {
 				map.put("Col " + j, getRandomResult());
 			}
@@ -113,21 +117,29 @@ public class WrtSanityCheckServiceImplTest {
 		return result;
 	}
 
-	private List<QueryBean> getDefaultQueries() {
-		List<QueryBean> result = new ArrayList<>();
+	private List<SanityCheck> getDefaultSanityChecks() {
+		List<SanityCheck> result = new ArrayList<>();
 
 		int categories = 1 + random.nextInt(MAX_CATEGORIES);
-		int query = 0;
 
 		for (int i = 0; i < categories; i++) {
 			int topics = 1 + random.nextInt(MAX_TOPICS);
-			for (int j = 0; j < topics; j++) {
-				QueryBean queryBean = new QueryBean();
-				queryBean.setCategory("Category " + i);
-				queryBean.setTopic("Topic " + j);
-				queryBean.setQuery("Query " + (query++));
 
-				result.add(queryBean);
+			SanityCheckCategory sanityCheckCategory = new SanityCheckCategory();
+			sanityCheckCategory.setId(i);
+			sanityCheckCategory.setName("Category " + i);
+			for (int j = 0; j < topics; j++) {
+				int id = i * topics + j;
+				SanityCheck sanityCheck = new SanityCheck();
+				sanityCheck.setId(id);
+				sanityCheck.setQuery("Query " + id);
+				sanityCheck.setExclusions(new ArrayList<>());
+				sanityCheck.setTopic("Topic " + id);
+				sanityCheck.setSanityCheckCategoryId(i);
+				sanityCheck.setSanityCheckCategory(sanityCheckCategory);
+				sanityCheck.setComments("Comment " + id);
+
+				result.add(sanityCheck);
 			}
 		}
 

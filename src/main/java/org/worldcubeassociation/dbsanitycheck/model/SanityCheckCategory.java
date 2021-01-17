@@ -11,7 +11,7 @@ import lombok.Data;
 @Table(name = "sanity_check_categories")
 public class SanityCheckCategory {
 	@Id
-	private Long id;
+	private Integer id;
 
 	private String name;
 }

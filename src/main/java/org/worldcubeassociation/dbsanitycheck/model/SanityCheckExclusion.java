@@ -12,10 +12,10 @@ import lombok.Data;
 @Table(name = "sanity_check_exclusions")
 public class SanityCheckExclusion {
 	@Id
-	private Long id;
+	private Integer id;
 	
 	@Column(name = "sanity_check_id")
-	private Long sanityCheckId;
+	private Integer sanityCheckId;
 	
 	private String exclusion;
 	
