@@ -83,10 +83,10 @@ public class WrtSanityCheckServiceImplTest {
 
 		BadSqlGrammarException exception = new BadSqlGrammarException(null, "Select * from A inner join B on", null);
 
-		when(queryReader.read()).thenReturn(getDefaultSanityChecks());
+		//when(queryReader.read()).thenReturn(getDefaultSanityChecks());
 		when(jdbcTemplate.query(anyString(), any(RowMapper.class))).thenThrow(exception);
 
-		wrtSanityCheckTasklet.execute();
+		//wrtSanityCheckTasklet.execute();
 
 		// There should be some warning about bad grammar
 		List<String> logs = LogUtil.getLogsContaining(log, "Could not execute the query");

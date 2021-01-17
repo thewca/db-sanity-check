@@ -9,6 +9,6 @@ import org.worldcubeassociation.dbsanitycheck.bean.SanityCheckWithErrorBean;
 
 @FunctionalInterface
 public interface EmailService {
-	public void sendEmail(List<AnalysisBean> analysisResult, List<SanityCheckWithErrorBean> queriesWithError)
+	void sendEmail(List<AnalysisBean> analysisResult, List<SanityCheckWithErrorBean> queriesWithError)
 			throws MessagingException;
 }

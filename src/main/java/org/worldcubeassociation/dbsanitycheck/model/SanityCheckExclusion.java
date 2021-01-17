@@ -17,6 +17,8 @@ public class SanityCheckExclusion {
 	@Column(name = "sanity_check_id")
 	private Integer sanityCheckId;
 	
+	// This is actually a json and we could use hibernate types
+	// TODO https://github.com/vladmihalcea/hibernate-types
 	private String exclusion;
 	
 	private String comments;

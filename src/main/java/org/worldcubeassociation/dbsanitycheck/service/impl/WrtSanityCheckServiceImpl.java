@@ -1,12 +1,6 @@
 package org.worldcubeassociation.dbsanitycheck.service.impl;
 
-import java.sql.ResultSetMetaData;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import javax.mail.MessagingException;
-
+import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
@@ -20,160 +14,168 @@ import org.worldcubeassociation.dbsanitycheck.repository.SanityCheckRepository;
 import org.worldcubeassociation.dbsanitycheck.service.EmailService;
 import org.worldcubeassociation.dbsanitycheck.service.WrtSanityCheckService;
 
-import lombok.extern.slf4j.Slf4j;
+import java.sql.ResultSetMetaData;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import javax.mail.MessagingException;
 
 @Slf4j
 @Component
 public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
 
-	@Autowired
-	private JdbcTemplate jdbcTemplate;
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
-	@Autowired
-	private EmailService emailService;
+    @Autowired
+    private EmailService emailService;
 
-	@Autowired
-	private SanityCheckRepository sanityCheckRepository;
+    @Autowired
+    private SanityCheckRepository sanityCheckRepository;
 
-	// Hold inconsistencies
-	private List<AnalysisBean> analysisResult = new ArrayList<>();
+    // Hold inconsistencies
+    private List<AnalysisBean> analysisResult = new ArrayList<>();
 
-	private List<SanityCheckWithErrorBean> queriesWithError = new ArrayList<>();
+    private List<SanityCheckWithErrorBean> queriesWithError = new ArrayList<>();
 
-	@Override
-	public void execute() throws MessagingException {
-		log.info("WRT Sanity Check");
+    private static final List<Integer> IGNORE = Arrays.asList(11, 18, 20, 21, 24);
 
-		log.info("Reading queries");
+    @Override
+    public void execute() throws MessagingException {
+        log.info("WRT Sanity Check");
 
-		// Read queryes
-		List<SanityCheck> sanityChecks = sanityCheckRepository
-				.findAll(Sort.by(Sort.Direction.ASC, "sanityCheckCategoryId", "topic"));
-		log.info("Found {} queries", sanityChecks.size());
+        log.info("Reading queries");
 
-		executeSanityChecks(sanityChecks);
-		showResults();
+        // Read queryes
+        List<SanityCheck> sanityChecks = sanityCheckRepository
+                .findAll(Sort.by(Sort.Direction.ASC, "sanityCheckCategoryId", "topic"));
+        log.info("Found {} queries", sanityChecks.size());
 
-		log.info("All queries executed");
+        executeSanityChecks(sanityChecks);
+        showResults();
 
-		emailService.sendEmail(analysisResult, queriesWithError);
+        log.info("All queries executed");
 
-		log.info("Sanity check finished");
-	}
+        emailService.sendEmail(analysisResult, queriesWithError);
 
-	private void executeSanityChecks(List<SanityCheck> sanityChecks) {
-		log.info("Execute queries");
+        log.info("Sanity check finished");
+    }
 
-		String prevCategory = null;
-		for (SanityCheck sanityCheck : sanityChecks) {
+    private void executeSanityChecks(List<SanityCheck> sanityChecks) {
+        log.info("Execute queries");
 
-			// We log at each new category
-			String category = sanityCheck.getSanityCheckCategory().getName();
-			if (prevCategory == null || !prevCategory.equals(category)) {
-				log.info(" ========== Category = {} ========== ", category);
-				prevCategory = category;
-			}
+        String prevCategory = null;
+        for (SanityCheck sanityCheck : sanityChecks) {
 
-			generalAnalysis(sanityCheck);
-		}
-	}
+            // TODO remove, dev speed
+            if (sanityCheck.getExclusions().isEmpty() || IGNORE.contains(sanityCheck.getId())) {
+                continue;
+            }
 
-	/**
-	 * A general purpose analysis. If the query returns any value, it will be added
-	 * to the result
-	 * 
-	 * @param topic defines the current operation
-	 * @param query is the sql query
-	 */
-	private void generalAnalysis(SanityCheck sanityCheck) {
-		String topic = sanityCheck.getTopic();
-		String query = sanityCheck.getQuery();
+            // We log at each new category
+            String category = sanityCheck.getSanityCheckCategory().getName();
+            if (prevCategory == null || !prevCategory.equals(category)) {
+                log.info(" ========== Category = {} ========== ", category);
+                prevCategory = category;
+            }
 
-		// With good constraints, this won't throw a null pointer
-		String category = sanityCheck.getSanityCheckCategory().getName();
+            generalAnalysis(sanityCheck);
+        }
+    }
 
-		List<JSONObject> result = new ArrayList<>();
-		try {
+    /**
+     * A general purpose analysis. If the query returns any value, it will be added to the result
+     *
+     * @param sanityCheck
+     */
+    private void generalAnalysis(SanityCheck sanityCheck) {
+        String topic = sanityCheck.getTopic();
+        String query = sanityCheck.getQuery();
 
-			log.info(" ===== " + topic + " ===== ");
-			log.info(query);
+        List<JSONObject> result;
+        try {
 
-			result = jdbcTemplate.query(query, (rs, rowNum) -> {
-				// Makes the result set into 1 result
-				JSONObject out = new JSONObject();
-				ResultSetMetaData rsmd = rs.getMetaData();
-				int columnCount = rsmd.getColumnCount();
+            log.info(" ===== " + topic + " ===== ");
+            log.info(query);
 
-				// The column count starts from 1
-				for (int i = 1; i <= columnCount; i++) {
-					String name = rsmd.getColumnName(i);
-					out.put(name, rs.getString(i));
-				}
-				return out;
-			});
+            result = jdbcTemplate.query(query, (rs, rowNum) -> {
+                // Makes the result set into 1 result
+                JSONObject out = new JSONObject();
+                ResultSetMetaData rsmd = rs.getMetaData();
+                int columnCount = rsmd.getColumnCount();
 
-			removeExclusions(result, sanityCheck);
-		} catch (Exception e) {
-			log.error("Could not execute the query {}\n{}", query, e.getMessage());
-			SanityCheckWithErrorBean sanityCheckWithErrorBean = new SanityCheckWithErrorBean();
-			sanityCheckWithErrorBean.setSanityCheck(sanityCheck);
-			sanityCheckWithErrorBean.setError(e.getMessage());
-			queriesWithError.add(sanityCheckWithErrorBean);
-			return;
-		}
+                // The column count starts from 1
+                for (int i = 1; i <= columnCount; i++) {
+                    String name = rsmd.getColumnName(i);
+                    out.put(name, rs.getString(i));
+                }
+                return out;
+            });
 
-		if (!result.isEmpty()) {
-			log.info("* Found {} results for {}", result.size(), topic);
+            removeExclusions(result, sanityCheck);
+        } catch (Exception e) {
+            log.error("Could not execute the query {}\n{}", query, e.getMessage());
+            SanityCheckWithErrorBean sanityCheckWithErrorBean = new SanityCheckWithErrorBean();
+            sanityCheckWithErrorBean.setSanityCheck(sanityCheck);
+            sanityCheckWithErrorBean.setError(e.getMessage());
+            queriesWithError.add(sanityCheckWithErrorBean);
+            return;
+        }
 
-			AnalysisBean analysisBean = new AnalysisBean();
-			analysisBean.setCategory(category);
-			analysisBean.setTopic(topic);
-			analysisBean.setAnalysis(result);
+        if (!result.isEmpty()) {
+            log.info("* Found {} results for {}", result.size(), topic);
 
-			analysisResult.add(analysisBean);
-		}
-	}
+            AnalysisBean analysisBean = new AnalysisBean();
+            analysisBean.setSanityCheck(sanityCheck);
+            analysisBean.setAnalysis(result);
 
-	private void removeExclusions(List<JSONObject> result, SanityCheck sanityCheck) {
-		// We compare strings instead of json because comparing json in java is painful
-		// String comparison is also a bad option, so we just do string -> json ->
-		// string
-		List<String> exclusions = sanityCheck.getExclusions().stream().map(SanityCheckExclusion::getExclusion)
-				.map(JSONObject::new).map(Object::toString).collect(Collectors.toList());
+            analysisResult.add(analysisBean);
+        }
+    }
 
-		if (exclusions.isEmpty()) {
-			return;
-		}
+    private void removeExclusions(List<JSONObject> result, SanityCheck sanityCheck) {
+        // We compare strings instead of json because comparing json in java is painful
+        // String comparison is also a bad option, so we just do string -> json ->
+        // string
+        List<String> exclusions = sanityCheck.getExclusions().stream().map(SanityCheckExclusion::getExclusion)
+                .map(JSONObject::new).map(Object::toString).collect(Collectors.toList());
 
-		log.info("{} exclusions found", sanityCheck.getExclusions().size());
+        if (exclusions.isEmpty()) {
+            return;
+        }
 
-		List<JSONObject> remains = result.stream().filter(it -> !exclusions.contains(it.toString()))
-				.collect(Collectors.toList());
+        log.info("{} exclusions found", sanityCheck.getExclusions().size());
 
-		if (remains.isEmpty()) {
-			log.info("All the results are known false positives");
-		} else if (remains.size() == result.size()) {
-			log.info(
-					"There are false positives in the database, but no result were excluded. Please check the exclusion.");
-		} else {
-			log.info("There are some false positives, but no all the results were false positives");
-		}
+        List<JSONObject> remains = result.stream().filter(it -> !exclusions.contains(it.toString()))
+                .collect(Collectors.toList());
 
-		// This is result = remains, but without loosing reference
-		result.clear();
-		result.addAll(remains);
-	}
+        if (remains.isEmpty()) {
+            log.info("All the results are known false positives");
+        } else if (remains.size() == result.size()) {
+            log.info(
+                    "There are false positives in the database, but no result were excluded. Please check the "
+                            + "exclusion.");
+        } else {
+            log.info("There are some false positives, but no all the results were false positives");
+        }
 
-	private void showResults() {
-		analysisResult.forEach(item -> {
-			log.warn(" ** Inconsistency at [{}] {}", item.getCategory(), item.getTopic());
-			item.getAnalysis().stream().forEach(it -> log.info(it.toString()));
-		});
+        // This is result = remains, but without loosing reference
+        result.clear();
+        result.addAll(remains);
+    }
 
-		queriesWithError.forEach(item -> {
-			log.warn(" ** Query with error in [{}] {}", item.getSanityCheck().getSanityCheckCategory().getName(),
-					item.getSanityCheck().getTopic());
-			log.warn(item.getError());
-		});
-	}
+    private void showResults() {
+        analysisResult.forEach(item -> {
+            log.warn(" ** Inconsistency at [{}] {}", item.getSanityCheck().getSanityCheckCategory().getName(),
+                    item.getSanityCheck().getTopic());
+            item.getAnalysis().stream().forEach(it -> log.info(it.toString()));
+        });
+
+        queriesWithError.forEach(item -> {
+            log.warn(" ** Query with error in [{}] {}", item.getSanityCheck().getSanityCheckCategory().getName(),
+                    item.getSanityCheck().getTopic());
+            log.warn(item.getError());
+        });
+    }
 }

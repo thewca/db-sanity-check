@@ -23,7 +23,6 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.worldcubeassociation.dbsanitycheck.bean.AnalysisBean;
-import org.worldcubeassociation.dbsanitycheck.bean.QueryBean;
 import org.worldcubeassociation.dbsanitycheck.bean.SanityCheckWithErrorBean;
 import org.worldcubeassociation.dbsanitycheck.util.LogUtil;
 
@@ -113,8 +112,8 @@ public class EmailServiceImplTest {
 
 		for (int i = 0; i < topics; i++) {
 			AnalysisBean analysisBean = new AnalysisBean();
-			analysisBean.setCategory("Category " + i);
-			analysisBean.setTopic("Topic " + i);
+			//analysisBean.setCategory("Category " + i);
+			//analysisBean.setTopic("Topic " + i);
 
 			int inconsistencies = 1 + random.nextInt(MAX_INCONSISTENCIES_FOUND);
 
@@ -127,7 +126,7 @@ public class EmailServiceImplTest {
 				}
 				analysis.add(map);
 			}
-			analysisBean.setAnalysis(analysis);
+			//analysisBean.setAnalysis(analysis);
 			analysisResult.add(analysisBean);
 		}
 
@@ -142,12 +141,12 @@ public class EmailServiceImplTest {
 		for (int i = 0; i < topics; i++) {
 			SanityCheckWithErrorBean queryWithError = new SanityCheckWithErrorBean();
 
-			QueryBean queryBean = new QueryBean();
-			queryBean.setCategory("Category " + (MAX_TOPICS_FOUND + i)); // Just to have different numbers
-			queryBean.setTopic("Topic " + (MAX_TOPICS_FOUND + i));
-
-			queryWithError.setQueryBean(queryBean);
-			queryWithError.setError("Error " + i);
+//			QueryBean queryBean = new QueryBean();
+//			queryBean.setCategory("Category " + (MAX_TOPICS_FOUND + i)); // Just to have different numbers
+//			queryBean.setTopic("Topic " + (MAX_TOPICS_FOUND + i));
+//
+//			queryWithError.setQueryBean(queryBean);
+//			queryWithError.setError("Error " + i);
 
 			result.add(queryWithError);
 		}
