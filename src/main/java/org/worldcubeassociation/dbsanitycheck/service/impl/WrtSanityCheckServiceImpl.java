@@ -10,7 +10,7 @@ import java.util.Map;
 import javax.mail.MessagingException;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.worldcubeassociation.dbsanitycheck.bean.AnalysisBean;
@@ -20,6 +20,8 @@ import org.worldcubeassociation.dbsanitycheck.model.SanityCheck;
 import org.worldcubeassociation.dbsanitycheck.repository.SanityCheckRepository;
 import org.worldcubeassociation.dbsanitycheck.service.EmailService;
 import org.worldcubeassociation.dbsanitycheck.service.WrtSanityCheckService;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -41,12 +43,20 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
 
 	private List<SanityCheckWithErrorBean> queriesWithError = new ArrayList<>();
 
+	private static ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+	// TODO remove, dev, avoid long queries
+	private static List<Long> IGNORE = List.of(11L, 18L, 20L, 21L, 24L);
+
 	@Override
 	public void execute() throws FileNotFoundException, SanityCheckException, MessagingException {
 		log.info("WRT Sanity Check");
 
+		log.info("Reading queries");
+
 		// Read queryes
-		List<SanityCheck> sanityChecks = sanityCheckRepository.findAll();
+		List<SanityCheck> sanityChecks = sanityCheckRepository
+				.findAll(Sort.by(Sort.Direction.ASC, "sanityCheckCategoryId", "topic"));
 		log.info("Found {} queries", sanityChecks.size());
 
 		executeSanityChecks(sanityChecks);
@@ -64,6 +74,11 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
 
 		String prevCategory = null;
 		for (SanityCheck sanityCheck : sanityChecks) {
+
+			// TODO remove, dev
+			if (sanityCheck.getExclusions().isEmpty() || IGNORE.contains(sanityCheck.getId())) {
+				continue;
+			}
 
 			// We log at each new category
 			String category = sanityCheck.getSanityCheckCategory().getName();
@@ -86,7 +101,7 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
 	private void generalAnalysis(SanityCheck sanityCheck) {
 		String topic = sanityCheck.getTopic();
 		String query = sanityCheck.getQuery();
-		
+
 		// With good constraints, this won't throw a null pointer
 		String category = sanityCheck.getSanityCheckCategory().getName();
 
@@ -95,6 +110,10 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
 
 			log.info(" ===== " + topic + " ===== ");
 			log.info(query);
+
+			if (!sanityCheck.getExclusions().isEmpty()) {
+				log.info("{} exclusions found", sanityCheck.getExclusions().size());
+			}
 
 			result = jdbcTemplate.query(query, (rs, rowNum) -> {
 				// Makes the result set into 1 result
@@ -109,7 +128,7 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
 				}
 				return out;
 			});
-		} catch (DataAccessException e) {
+		} catch (Exception e) {
 			log.error("Could not execute the query {}\n{}", query, e.getMessage());
 			SanityCheckWithErrorBean sanityCheckWithErrorBean = new SanityCheckWithErrorBean();
 			sanityCheckWithErrorBean.setSanityCheck(sanityCheck);
