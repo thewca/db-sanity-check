@@ -1,7 +1,6 @@
 package org.worldcubeassociation.dbsanitycheck.bean;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 
 import org.json.JSONObject;

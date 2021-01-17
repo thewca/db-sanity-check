@@ -22,8 +22,6 @@ import org.worldcubeassociation.dbsanitycheck.repository.SanityCheckRepository;
 import org.worldcubeassociation.dbsanitycheck.service.EmailService;
 import org.worldcubeassociation.dbsanitycheck.service.WrtSanityCheckService;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -43,11 +41,6 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
 	private List<AnalysisBean> analysisResult = new ArrayList<>();
 
 	private List<SanityCheckWithErrorBean> queriesWithError = new ArrayList<>();
-
-	private static ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
-	// TODO remove, dev, avoid long queries
-	private static List<Long> IGNORE = List.of(11L, 18L, 20L, 21L, 24L);
 
 	@Override
 	public void execute() throws FileNotFoundException, SanityCheckException, MessagingException {
@@ -75,11 +68,6 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
 
 		String prevCategory = null;
 		for (SanityCheck sanityCheck : sanityChecks) {
-
-			// TODO remove, dev
-			if (sanityCheck.getExclusions().isEmpty() || IGNORE.contains(sanityCheck.getId())) {
-				continue;
-			}
 
 			// We log at each new category
 			String category = sanityCheck.getSanityCheckCategory().getName();
@@ -111,10 +99,6 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
 
 			log.info(" ===== " + topic + " ===== ");
 			log.info(query);
-
-			if (!sanityCheck.getExclusions().isEmpty()) {
-				log.info("{} exclusions found", sanityCheck.getExclusions().size());
-			}
 
 			result = jdbcTemplate.query(query, (rs, rowNum) -> {
 				// Makes the result set into 1 result
@@ -153,23 +137,45 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
 	}
 
 	private void removeExclusions(List<JSONObject> result, SanityCheck sanityCheck) {
-		List<JSONObject> exclusions = sanityCheck.getExclusions().stream().map(SanityCheckExclusion::getExclusion)
-				.map(JSONObject::new).collect(Collectors.toList());
-		exclusions.forEach(it -> {
-			result.forEach(it2 -> {
-				if (it.equals(it2)) {
-					log.info("Exclusion found", it);
-				}
-			});
-		});
-		log.info("" + exclusions);
+		// We compare strings instead of json because comparing json in java is painful
+		// String comparison is also a bad option, so we just do string -> json ->
+		// string
+		List<String> exclusions = sanityCheck.getExclusions().stream().map(SanityCheckExclusion::getExclusion)
+				.map(JSONObject::new).map(Object::toString).collect(Collectors.toList());
 
+		if (exclusions.isEmpty()) {
+			return;
+		}
+
+		log.info("{} exclusions found", sanityCheck.getExclusions().size());
+
+		List<JSONObject> remains = result.stream().filter(it -> !exclusions.contains(it.toString()))
+				.collect(Collectors.toList());
+
+		if (remains.isEmpty()) {
+			log.info("All the results are known false positives");
+		} else if (remains.size() == result.size()) {
+			log.info(
+					"There are false positives in the database, but no result were excluded. Please check the exclusion.");
+		} else {
+			log.info("There are some false positives, but no all the results were false positives");
+		}
+
+		// This is result = remains, but without loosing reference
+		result.clear();
+		result.addAll(remains);
 	}
 
 	private void showResults() {
 		analysisResult.forEach(item -> {
 			log.warn(" ** Inconsistency at [{}] {}", item.getCategory(), item.getTopic());
-			item.getAnalysis().stream().forEach(it -> log.info("" + it));
+			item.getAnalysis().stream().forEach(it -> log.info(it.toString()));
+		});
+
+		queriesWithError.forEach(item -> {
+			log.warn(" ** Query with error in [{}] {}", item.getSanityCheck().getSanityCheckCategory().getName(),
+					item.getSanityCheck().getTopic());
+			log.warn(item.getError());
 		});
 	}
 }
