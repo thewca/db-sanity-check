@@ -16,7 +16,7 @@ import org.worldcubeassociation.dbsanitycheck.service.WrtSanityCheckService;
 
 import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.mail.MessagingException;
@@ -38,8 +38,6 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
     private List<AnalysisBean> analysisResult = new ArrayList<>();
 
     private List<SanityCheckWithErrorBean> queriesWithError = new ArrayList<>();
-
-    private static final List<Integer> IGNORE = Arrays.asList(11, 18, 20, 21, 24);
 
     @Override
     public void execute() throws MessagingException {
@@ -68,11 +66,6 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
         String prevCategory = null;
         for (SanityCheck sanityCheck : sanityChecks) {
 
-            // TODO remove, dev speed
-            if (sanityCheck.getExclusions().isEmpty() || IGNORE.contains(sanityCheck.getId())) {
-                continue;
-            }
-
             // We log at each new category
             String category = sanityCheck.getSanityCheckCategory().getName();
             if (prevCategory == null || !prevCategory.equals(category)) {
@@ -86,8 +79,6 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
 
     /**
      * A general purpose analysis. If the query returns any value, it will be added to the result
-     *
-     * @param sanityCheck
      */
     private void generalAnalysis(SanityCheck sanityCheck) {
         String topic = sanityCheck.getTopic();
@@ -135,11 +126,8 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
     }
 
     private void removeExclusions(List<JSONObject> result, SanityCheck sanityCheck) {
-        // We compare strings instead of json because comparing json in java is painful
-        // String comparison is also a bad option, so we just do string -> json ->
-        // string
-        List<String> exclusions = sanityCheck.getExclusions().stream().map(SanityCheckExclusion::getExclusion)
-                .map(JSONObject::new).map(Object::toString).collect(Collectors.toList());
+        List<JSONObject> exclusions = sanityCheck.getExclusions().stream().map(SanityCheckExclusion::getExclusion)
+                .map(JSONObject::new).collect(Collectors.toList());
 
         if (exclusions.isEmpty()) {
             return;
@@ -147,7 +135,7 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
 
         log.info("{} exclusions found", sanityCheck.getExclusions().size());
 
-        List<JSONObject> remains = result.stream().filter(it -> !exclusions.contains(it.toString()))
+        List<JSONObject> remains = result.stream().filter(it -> !compareExistingKeys(it, exclusions))
                 .collect(Collectors.toList());
 
         if (remains.isEmpty()) {
@@ -165,11 +153,40 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
         result.addAll(remains);
     }
 
+    // Returns true if one of the exclusions matches sanity check result
+    // Considers
+    private boolean compareExistingKeys(JSONObject sanityCheckResult, List<JSONObject> exclusions) {
+
+        for (JSONObject exclusion : exclusions) {
+            if (partiallyEquals(exclusion, sanityCheckResult)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // If existing keys of exclusion matches exclusion keys of sanityCheckResult, returns true.
+    // Note that this can let solumn keys of sanityCheckResult out of the comparison
+    private boolean partiallyEquals(JSONObject exclusion, JSONObject sanityCheckResult) {
+        Iterator<String> keys = exclusion.keys();
+
+        while (keys.hasNext()) {
+            String key = keys.next();
+
+            if (!exclusion.getString(key).equals(sanityCheckResult.getString(key))) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+
     private void showResults() {
         analysisResult.forEach(item -> {
             log.warn(" ** Inconsistency at [{}] {}", item.getSanityCheck().getSanityCheckCategory().getName(),
                     item.getSanityCheck().getTopic());
-            item.getAnalysis().stream().forEach(it -> log.info(it.toString()));
+            item.getAnalysis().forEach(it -> log.info(it.toString()));
         });
 
         queriesWithError.forEach(item -> {

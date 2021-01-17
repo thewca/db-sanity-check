@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -18,6 +19,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.time.LocalDate;
 import java.util.List;
+import javax.activation.DataSource;
 import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
@@ -75,11 +77,11 @@ public class EmailServiceImpl implements EmailService {
             FileSystemResource file = new FileSystemResource(new File(logFilePath));
             helper.addAttachment("db-sanity-check.txt", file);
 
-            ByteArrayInputStream exclusionSuggestion =
+            ByteArrayResource exclusionSuggestion =
                     sanityCheckExclusionService.buildExclusionSuggestionFile(analysisResult);
             if (exclusionSuggestion != null) {
                 // txt for better reading in the email
-                helper.addAttachment("exclusion-suggestions.txt", file);
+                helper.addAttachment("exclusion-suggestions.txt", exclusionSuggestion);
             }
 
             emailSender.send(message);
