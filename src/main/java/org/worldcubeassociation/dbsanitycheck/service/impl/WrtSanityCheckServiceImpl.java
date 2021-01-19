@@ -181,7 +181,7 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
         while (keys.hasNext()) {
             String key = keys.next();
 
-            if (!exclusion.optString(key).equals(sanityCheckResult.getString(key))) {
+            if (!exclusion.optString(key).equals(sanityCheckResult.optString(key))) {
                 return false;
             }
         }

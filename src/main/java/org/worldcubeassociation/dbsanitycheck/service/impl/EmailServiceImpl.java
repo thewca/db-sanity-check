@@ -15,11 +15,9 @@ import org.worldcubeassociation.dbsanitycheck.model.SanityCheck;
 import org.worldcubeassociation.dbsanitycheck.service.EmailService;
 import org.worldcubeassociation.dbsanitycheck.service.SanityCheckExclusionService;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.time.LocalDate;
 import java.util.List;
-import javax.activation.DataSource;
 import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
@@ -49,6 +47,8 @@ public class EmailServiceImpl implements EmailService {
     @Autowired
     private SanityCheckExclusionService sanityCheckExclusionService;
 
+    private static final boolean MULTIPART = true;
+
     @Override
     public void sendEmail(List<AnalysisBean> analysisResult, List<SanityCheckWithErrorBean> queriesWithError)
             throws MessagingException {
@@ -57,8 +57,7 @@ public class EmailServiceImpl implements EmailService {
 
             MimeMessage message = emailSender.createMimeMessage();
 
-            boolean multipart = true;
-            MimeMessageHelper helper = new MimeMessageHelper(message, multipart);
+            MimeMessageHelper helper = new MimeMessageHelper(message, MULTIPART);
 
             helper.setFrom(mailFrom);
             helper.setTo(InternetAddress.parse(mailTo));
@@ -110,7 +109,10 @@ public class EmailServiceImpl implements EmailService {
 
     private void addAnalysis(List<AnalysisBean> analysisResult, StringBuilder sb) {
         if (!analysisResult.isEmpty()) {
-            sb.append("<p>Found inconsistencies in ").append(analysisResult.size()).append(" topics.</p>\n\n");
+            sb.append("<h4>Found inconsistencies in ").append(analysisResult.size()).append(" topics.</h4>\n\n");
+        } else {
+            sb.append("<h4>No inconsistencies found.</h4>\n\n");
+            return;
         }
 
         for (int i = 0; i < analysisResult.size(); i++) {
@@ -145,13 +147,16 @@ public class EmailServiceImpl implements EmailService {
 
     private void addErrors(List<SanityCheckWithErrorBean> queriesWithError, StringBuilder sb) {
         if (!queriesWithError.isEmpty()) {
-            sb.append("<p>Found errors in ").append(queriesWithError.size()).append(" queries.</p>\n\n");
+            sb.append("<h4>Found errors in ").append(queriesWithError.size()).append(" queries.</h4>\n\n");
+        } else {
+            sb.append("<h4>There is no query with SQL errors.</h4>\n\n");
+            return;
         }
 
         for (int i = 0; i < queriesWithError.size(); i++) {
             SanityCheckWithErrorBean queryWithErrorBean = queriesWithError.get(i);
             SanityCheck sanityCheck = queryWithErrorBean.getSanityCheck();
-            sb.append(String.format("<h3>%s. [%s] %s</h3>%n", i + 1, sanityCheck.getSanityCheckCategory().getName(),
+            sb.append(String.format("<p>%s. [%s] %s</p>%n", i + 1, sanityCheck.getSanityCheckCategory().getName(),
                     sanityCheck.getTopic()));
             sb.append(String.format("<code>%s</code>\n", sanityCheck.getQuery()));
             sb.append(String.format("<p><b>Reason:</b> %s</p>\n", queryWithErrorBean.getError()));
