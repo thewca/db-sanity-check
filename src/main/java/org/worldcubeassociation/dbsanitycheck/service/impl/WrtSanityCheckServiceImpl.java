@@ -96,9 +96,17 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
                 ResultSetMetaData rsmd = rs.getMetaData();
                 int columnCount = rsmd.getColumnCount();
 
+                List<String> columnsConsidered = new ArrayList<>();
+
                 // The column count starts from 1
                 for (int i = 1; i <= columnCount; i++) {
                     String name = rsmd.getColumnName(i);
+
+                    if (columnsConsidered.contains(name)) {
+                        throw new RuntimeException("Column " + name + " is duplicated");
+                    }
+
+                    columnsConsidered.add(name);
                     out.put(name, rs.getString(i));
                 }
                 return out;
@@ -142,10 +150,10 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
             log.info("All the results are known false positives");
         } else if (remains.size() == result.size()) {
             log.info(
-                    "There are false positives in the database, but no result were excluded. Please check the "
-                            + "exclusion.");
+                    "There are false positives in the database, but no results were excluded, please check the "
+                            + "exclusion");
         } else {
-            log.info("There are some false positives, but no all the results were false positives");
+            log.info("There are some false positives, but not all the results were false positives");
         }
 
         // This is result = remains, but without loosing reference
@@ -173,7 +181,7 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
         while (keys.hasNext()) {
             String key = keys.next();
 
-            if (!exclusion.getString(key).equals(sanityCheckResult.getString(key))) {
+            if (!exclusion.optString(key).equals(sanityCheckResult.getString(key))) {
                 return false;
             }
         }
