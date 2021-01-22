@@ -22,6 +22,7 @@ import org.worldcubeassociation.dbsanitycheck.util.StubUtil;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.mail.MessagingException;
 
 import static org.junit.Assert.assertEquals;
@@ -58,12 +59,17 @@ public class WrtSanityCheckServiceImplTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    public void bestCaseScenarioTest() throws MessagingException {
+    public void bestCaseScenarioTest() throws MessagingException, JSONException {
         Logger log = LogUtil.getDefaultLogger(WrtSanityCheckServiceImpl.class);
 
-        when(sanityCheckRepository.findAll(any(Sort.class))).thenReturn(getDefaultSanityChecks());
-        when(jdbcTemplate.query(anyString(), any(RowMapper.class))).thenAnswer(answer -> getDefaultQueryResult());
+        List<SanityCheck> defaultSanityChecks = getDefaultSanityChecks();
+        List<List<JSONObject>> defaultQueryResult = getDefaultQueryResult(defaultSanityChecks);
+
+        AtomicInteger count = new AtomicInteger();
+
+        when(sanityCheckRepository.findAll(any(Sort.class))).thenReturn(defaultSanityChecks);
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class)))
+                .thenAnswer(answer -> defaultQueryResult.get(count.getAndIncrement()));
 
         wrtSanityCheckTasklet.execute();
 
@@ -72,33 +78,56 @@ public class WrtSanityCheckServiceImplTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    public void queryWithErrorTest() {
+    public void queryWithErrorTest() throws MessagingException {
         Logger log = LogUtil.getDefaultLogger(WrtSanityCheckServiceImpl.class);
 
         BadSqlGrammarException exception = new BadSqlGrammarException(null, "Select * from A inner join B on", null);
 
-        //when(queryReader.read()).thenReturn(getDefaultSanityChecks());
+        when(sanityCheckRepository.findAll(any(Sort.class))).thenReturn(getDefaultSanityChecks());
         when(jdbcTemplate.query(anyString(), any(RowMapper.class))).thenThrow(exception);
 
-        //wrtSanityCheckTasklet.execute();
+        wrtSanityCheckTasklet.execute();
 
         // There should be some warning about bad grammar
         List<String> logs = LogUtil.getLogsContaining(log, "Could not execute the query");
         assertFalse(logs.isEmpty());
     }
 
-    private List<JSONObject> getDefaultQueryResult() throws JSONException {
-        List<JSONObject> result = new ArrayList<>();
+    @Test
+    public void exclusionTest() throws MessagingException, JSONException {
+        Logger log = LogUtil.getDefaultLogger(WrtSanityCheckServiceImpl.class);
 
-        int numberOfResults = random.nextInt(MAX_QUERY_RESULT);
-        int numberOfColumns = 1 + random.nextInt(MAX_NUMBER_OF_COLUMNS);
-        for (int i = 0; i < numberOfResults; i++) {
-            JSONObject map = new JSONObject();
-            for (int j = 0; j < numberOfColumns; j++) {
-                map.put("Col " + j, getRandomResult());
+        List<SanityCheck> defaultSanityChecks = getDefaultSanityChecks();
+        List<List<JSONObject>> defaultQueryResult = getDefaultQueryResult(defaultSanityChecks);
+
+        AtomicInteger count = new AtomicInteger();
+
+        when(sanityCheckRepository.findAll(any(Sort.class))).thenReturn(defaultSanityChecks);
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class)))
+                .thenAnswer(answer -> defaultQueryResult.get(count.getAndIncrement()));
+
+        wrtSanityCheckTasklet.execute();
+
+        int logs = LogUtil.countLogsContaining(log, "Sanity check finished");
+        assertEquals(1, logs);
+    }
+
+    private List<List<JSONObject>> getDefaultQueryResult(List<SanityCheck> sanityChecks) throws JSONException {
+        List<List<JSONObject>> result = new ArrayList<>();
+
+        for (int i = 0; i < sanityChecks.size(); i++) {
+            List<JSONObject> list = new ArrayList<>();
+
+            int numberOfResults = random.nextInt(MAX_RESULT_LENGTH);
+            for (int j = 0; j < numberOfResults; j++) {
+                int numberOfColumns = 1 + random.nextInt(MAX_NUMBER_OF_COLUMNS);
+                JSONObject json = new JSONObject();
+                for (int k = 0; k < numberOfColumns; k++) {
+                    json.put("Col " + k, getRandomResult());
+                }
+                list.add(json);
             }
-            result.add(map);
+            result.add(list);
         }
 
         return result;
