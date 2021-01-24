@@ -111,6 +111,7 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
                 }
                 return out;
             });
+            log.info("* Found {} results for {}", result.size(), topic);
 
             removeExclusions(result, sanityCheck);
         } catch (Exception e) {
@@ -123,8 +124,6 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
         }
 
         if (!result.isEmpty()) {
-            log.info("* Found {} results for {}", result.size(), topic);
-
             AnalysisBean analysisBean = new AnalysisBean();
             analysisBean.setSanityCheck(sanityCheck);
             analysisBean.setAnalysis(result);
@@ -146,6 +145,10 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
         List<JSONObject> remains = result.stream().filter(it -> !compareExistingKeys(it, exclusions))
                 .collect(Collectors.toList());
 
+        if (exclusions.size() > result.size()){
+            log.info("You have more exclusions than results, check the exclusions.");
+        }
+
         if (remains.isEmpty()) {
             log.info("All the results are known false positives");
         } else if (remains.size() == result.size()) {
@@ -159,6 +162,8 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
         // This is result = remains, but without loosing reference
         result.clear();
         result.addAll(remains);
+
+        log.info("* Remain size: {}", result.size());
     }
 
     // Returns true if one of the exclusions matches sanity check result

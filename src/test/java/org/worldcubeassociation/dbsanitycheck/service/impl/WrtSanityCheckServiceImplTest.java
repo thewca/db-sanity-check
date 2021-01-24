@@ -120,8 +120,10 @@ public class WrtSanityCheckServiceImplTest {
         List<SanityCheck> sanityChecks = new ArrayList<>();
         SanityCheck sanityCheck = new SanityCheck();
         sanityCheck.setTopic("Topic 1");
+        sanityCheck.setQuery("select * from Results");
 
         SanityCheckCategory category = new SanityCheckCategory();
+        category.setName("Category");
         sanityCheck.setSanityCheckCategory(category);
 
         sanityChecks.add(sanityCheck);
@@ -131,13 +133,179 @@ public class WrtSanityCheckServiceImplTest {
         int nResults = 10;
 
         List<SanityCheckExclusion> exclusions = new ArrayList<>();
+        SanityCheckExclusion sanityCheckExclusion = new SanityCheckExclusion();
+
+        // The exclusion json will be like the result below, but with less columns
+        // 1 exclusion for them all
+        JSONObject json = new JSONObject();
+        json.put("country", "Brazil");
+        json.put("competitionId", "WC" + date.getYear());
+
+        // As of now, sanity checks stores exclusion as a dumped json
+        sanityCheckExclusion.setExclusion(json.toString());
+        exclusions.add(sanityCheckExclusion);
+        sanityCheck.setExclusions(exclusions);
+
+        List<JSONObject> queryResult = new ArrayList<>();
+
+        // This will be a json found by the sanity check
         for (int i = 0; i < nResults; i++) {
+            JSONObject jsonResult = new JSONObject();
+            jsonResult.put("id", i);
+            jsonResult.put("personName", "Person " + i);
+            jsonResult.put("competitionId", "WC" + date.getYear());
+            jsonResult.put("country", "Brazil");
+            queryResult.add(jsonResult);
+        }
+
+        when(sanityCheckRepository.findAll(any(Sort.class))).thenReturn(sanityChecks);
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class)))
+                .thenAnswer(answer -> queryResult);
+
+        wrtSanityCheckTasklet.execute();
+
+        int logs = LogUtil.countLogsContaining(log, "All the results are known false positives");
+        assertEquals(1, logs);
+    }
+
+    @Test
+    public void noResultExcludedDespiteHavingExclusionTest() throws MessagingException, JSONException {
+        Logger log = LogUtil.getDefaultLogger(WrtSanityCheckServiceImpl.class);
+
+        List<SanityCheck> sanityChecks = new ArrayList<>();
+        SanityCheck sanityCheck = new SanityCheck();
+        sanityCheck.setTopic("Topic 1");
+        sanityCheck.setQuery("select * from Results");
+
+        SanityCheckCategory category = new SanityCheckCategory();
+        category.setName("Category");
+        sanityCheck.setSanityCheckCategory(category);
+
+        sanityChecks.add(sanityCheck);
+
+        LocalDate date = LocalDate.now();
+
+        int nResults = 10;
+
+        List<SanityCheckExclusion> exclusions = new ArrayList<>();
+        SanityCheckExclusion sanityCheckExclusion = new SanityCheckExclusion();
+
+        // The exclusion json will be like the result below, but with less columns
+        JSONObject json = new JSONObject();
+        json.put("country", "Brazil");
+        json.put("competitionId", "WCA" + date.getYear()); // Slightly different, not excluded
+
+        // As of now, sanity checks stores exclusion as a dumped json
+        sanityCheckExclusion.setExclusion(json.toString());
+        exclusions.add(sanityCheckExclusion);
+        sanityCheck.setExclusions(exclusions);
+
+        List<JSONObject> queryResult = new ArrayList<>();
+
+        // This will be a json found by the sanity check
+        for (int i = 0; i < nResults; i++) {
+            JSONObject jsonResult = new JSONObject();
+            jsonResult.put("id", i);
+            jsonResult.put("personName", "Person " + i);
+            jsonResult.put("competitionId", "WC" + date.getYear());
+            jsonResult.put("country", "Brazil");
+            queryResult.add(jsonResult);
+        }
+
+        when(sanityCheckRepository.findAll(any(Sort.class))).thenReturn(sanityChecks);
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class)))
+                .thenAnswer(answer -> queryResult);
+
+        wrtSanityCheckTasklet.execute();
+
+        int logs = LogUtil.countLogsContaining(log,
+                "There are false positives in the database, but no results were excluded");
+        assertEquals(1, logs);
+    }
+
+    @Test
+    public void someResultExcludedTest() throws MessagingException, JSONException {
+        Logger log = LogUtil.getDefaultLogger(WrtSanityCheckServiceImpl.class);
+
+        List<SanityCheck> sanityChecks = new ArrayList<>();
+        SanityCheck sanityCheck = new SanityCheck();
+        sanityCheck.setTopic("Topic 1");
+        sanityCheck.setQuery("select * from Results");
+
+        SanityCheckCategory category = new SanityCheckCategory();
+        category.setName("Category");
+        sanityCheck.setSanityCheckCategory(category);
+
+        sanityChecks.add(sanityCheck);
+
+        LocalDate date = LocalDate.now();
+
+        int nResults = 10;
+
+        List<SanityCheckExclusion> exclusions = new ArrayList<>();
+        SanityCheckExclusion sanityCheckExclusion = new SanityCheckExclusion();
+
+        // The exclusion json will be like the result below, but with less columns
+        JSONObject json = new JSONObject();
+        json.put("country", "Brazil");
+        json.put("competitionId", "WC" + date.getYear());
+
+        // As of now, sanity checks stores exclusion as a dumped json
+        sanityCheckExclusion.setExclusion(json.toString());
+        exclusions.add(sanityCheckExclusion);
+        sanityCheck.setExclusions(exclusions);
+
+        List<JSONObject> queryResult = new ArrayList<>();
+
+        // This will be a json found by the sanity check
+        for (int i = 0; i < nResults; i++) {
+            JSONObject jsonResult = new JSONObject();
+            jsonResult.put("id", i);
+            jsonResult.put("personName", "Person " + i);
+            jsonResult
+                    .put("competitionId", "WC" + (date.getYear() + (i > 5 ? 1 : 0))); // This will differ in some cases
+            jsonResult.put("country", "Brazil");
+            queryResult.add(jsonResult);
+        }
+
+        when(sanityCheckRepository.findAll(any(Sort.class))).thenReturn(sanityChecks);
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class)))
+                .thenAnswer(answer -> queryResult);
+
+        wrtSanityCheckTasklet.execute();
+
+        int logs = LogUtil.countLogsContaining(log,
+                "There are some false positives, but not all the results were false positives");
+        assertEquals(1, logs);
+    }
+
+    @Test
+    public void moreExclusionThanNeededTest() throws MessagingException, JSONException {
+        Logger log = LogUtil.getDefaultLogger(WrtSanityCheckServiceImpl.class);
+
+        List<SanityCheck> sanityChecks = new ArrayList<>();
+        SanityCheck sanityCheck = new SanityCheck();
+        sanityCheck.setTopic("Topic 1");
+        sanityCheck.setQuery("select * from Results");
+
+        SanityCheckCategory category = new SanityCheckCategory();
+        category.setName("Category");
+        sanityCheck.setSanityCheckCategory(category);
+
+        sanityChecks.add(sanityCheck);
+
+        LocalDate date = LocalDate.now();
+
+        int nResults = 10;
+
+        List<SanityCheckExclusion> exclusions = new ArrayList<>();
+        for (int i = 0; i < nResults + 1; i++) {
             SanityCheckExclusion sanityCheckExclusion = new SanityCheckExclusion();
 
             // The exclusion json will be like the result below, but with less columns
             JSONObject json = new JSONObject();
             json.put("country", "Brazil");
-            json.put("competitionId", "WCA" + date.getYear());
+            json.put("competitionId", "WC" + date.getYear());
 
             // As of now, sanity checks stores exclusion as a dumped json
             sanityCheckExclusion.setExclusion(json.toString());
@@ -149,12 +317,13 @@ public class WrtSanityCheckServiceImplTest {
 
         // This will be a json found by the sanity check
         for (int i = 0; i < nResults; i++) {
-            JSONObject json = new JSONObject();
-            json.put("id", i);
-            json.put("personName", "Person " + i);
-            json.put("competitionId", "WC" + date.getYear());
-            json.put("country", "Brazil");
-            queryResult.add(json);
+            JSONObject jsonResult = new JSONObject();
+            jsonResult.put("id", i);
+            jsonResult.put("personName", "Person " + i);
+            jsonResult
+                    .put("competitionId", "WC" + (date.getYear() + (i > 5 ? 1 : 0))); // This will differ in some cases
+            jsonResult.put("country", "Brazil");
+            queryResult.add(jsonResult);
         }
 
         when(sanityCheckRepository.findAll(any(Sort.class))).thenReturn(sanityChecks);
@@ -163,7 +332,7 @@ public class WrtSanityCheckServiceImplTest {
 
         wrtSanityCheckTasklet.execute();
 
-        int logs = LogUtil.countLogsContaining(log, "All the results are known false positives");
+        int logs = LogUtil.countLogsContaining(log, "You have more exclusions than results, check the exclusions");
         assertEquals(1, logs);
     }
 
