@@ -5,6 +5,7 @@ import org.json.JSONObject;
 import org.worldcubeassociation.dbsanitycheck.model.SanityCheck;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 @Data
@@ -18,8 +19,9 @@ public class AnalysisBean {
             return result;
         }
 
-        for (String header : analysis.get(0).keySet()) {
-            result.add(header);
+        Iterator<String> headers = analysis.get(0).keys();
+        while (headers.hasNext()) {
+            result.add(headers.next());
         }
         return result;
     }

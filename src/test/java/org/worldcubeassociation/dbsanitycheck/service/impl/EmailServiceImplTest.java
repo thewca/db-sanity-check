@@ -10,15 +10,18 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.worldcubeassociation.dbsanitycheck.bean.AnalysisBean;
 import org.worldcubeassociation.dbsanitycheck.bean.SanityCheckWithErrorBean;
 import org.worldcubeassociation.dbsanitycheck.model.SanityCheck;
+import org.worldcubeassociation.dbsanitycheck.service.SanityCheckExclusionService;
 import org.worldcubeassociation.dbsanitycheck.util.LogUtil;
 import org.worldcubeassociation.dbsanitycheck.util.StubUtil;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -26,6 +29,7 @@ import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.when;
 
 public class EmailServiceImplTest {
@@ -38,6 +42,9 @@ public class EmailServiceImplTest {
 
     @Mock
     private JavaMailSender emailSender;
+
+    @Mock
+    private SanityCheckExclusionService sanityCheckExclusionService;
 
     private static final Random random = new Random();
     private static final int MAX_TOPICS_FOUND = 10;
@@ -60,8 +67,13 @@ public class EmailServiceImplTest {
 
         Logger log = LogUtil.getDefaultLogger(EmailServiceImpl.class);
 
+        String textFile = "-- exclusion suggestion";
+
         JavaMailSenderImpl sender = new JavaMailSenderImpl();
         when(emailSender.createMimeMessage()).thenReturn(sender.createMimeMessage());
+        when(sanityCheckExclusionService.buildExclusionSuggestionFile(anyList()))
+                .thenReturn(new ByteArrayResource(textFile.getBytes(
+                        StandardCharsets.UTF_8)));
 
         List<AnalysisBean> analysisResult = getDefaultAnalysis();
         List<SanityCheckWithErrorBean> queriesWithError = getDefaultQueriesWithError();
