@@ -1,137 +1,387 @@
 package org.worldcubeassociation.dbsanitycheck.service.impl;
 
+import ch.qos.logback.classic.Logger;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.Sort;
+import org.springframework.jdbc.BadSqlGrammarException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.worldcubeassociation.dbsanitycheck.model.SanityCheck;
+import org.worldcubeassociation.dbsanitycheck.model.SanityCheckCategory;
+import org.worldcubeassociation.dbsanitycheck.model.SanityCheckExclusion;
+import org.worldcubeassociation.dbsanitycheck.repository.SanityCheckRepository;
+import org.worldcubeassociation.dbsanitycheck.service.EmailService;
+import org.worldcubeassociation.dbsanitycheck.util.LogUtil;
+import org.worldcubeassociation.dbsanitycheck.util.StubUtil;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
+import javax.mail.MessagingException;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
-import java.io.FileNotFoundException;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-
-import javax.mail.MessagingException;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.jdbc.BadSqlGrammarException;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
-import org.worldcubeassociation.dbsanitycheck.bean.QueryBean;
-import org.worldcubeassociation.dbsanitycheck.exception.SanityCheckException;
-import org.worldcubeassociation.dbsanitycheck.reader.QueryReader;
-import org.worldcubeassociation.dbsanitycheck.service.EmailService;
-import org.worldcubeassociation.dbsanitycheck.util.LogUtil;
-
-import ch.qos.logback.classic.Logger;
-
 public class WrtSanityCheckServiceImplTest {
 
-	@InjectMocks
-	private WrtSanityCheckServiceImpl wrtSanityCheckTasklet;
+    @InjectMocks
+    private WrtSanityCheckServiceImpl wrtSanityCheckTasklet;
 
-	@Mock
-	private QueryReader queryReader;
+    @Mock
+    private SanityCheckRepository sanityCheckRepository;
 
-	@Mock
-	private EmailService emailService;
+    @Mock
+    private EmailService emailService;
 
-	@Mock
-	private JdbcTemplate jdbcTemplate;
+    @Mock
+    private JdbcTemplate jdbcTemplate;
 
-	private static final Random random = new Random();
+    private static final Random random = new Random();
 
-	private static final int MAX_CATEGORIES = 10;
-	private static final int MAX_TOPICS = 5;
-	private static final int MAX_QUERY_RESULT = 3;
-	private static final int MAX_NUMBER_OF_COLUMNS = 12;
-	private static final int MAX_RESULT_LENGTH = 20;
+    private static final int MAX_CATEGORIES = 10;
+    private static final int MAX_TOPICS = 5;
+    private static final int MAX_NUMBER_OF_COLUMNS = 12;
+    private static final int MAX_RESULT_LENGTH = 20;
 
-	@Before
-	public void setup() {
-		MockitoAnnotations.initMocks(this);
-	}
+    @Before
+    public void setup() {
+        MockitoAnnotations.initMocks(this);
+    }
 
-	@Test
-	@SuppressWarnings("unchecked")
-	public void bestCaseScenarioTest() throws FileNotFoundException, SanityCheckException, MessagingException {
-		Logger log = LogUtil.getDefaultLogger(WrtSanityCheckServiceImpl.class);
+    @Test
+    public void bestCaseScenarioTest() throws MessagingException, JSONException {
+        Logger log = LogUtil.getDefaultLogger(WrtSanityCheckServiceImpl.class);
 
-		when(queryReader.read()).thenReturn(getDefaultQueries());
-		when(jdbcTemplate.query(anyString(), any(RowMapper.class))).thenAnswer(answer -> getDefaultQueryResult());
+        List<SanityCheck> defaultSanityChecks = getDefaultSanityChecks();
+        List<List<JSONObject>> defaultQueryResult = getDefaultQueryResult(defaultSanityChecks);
 
-		wrtSanityCheckTasklet.execute();
+        AtomicInteger count = new AtomicInteger();
 
-		int logs = LogUtil.countLogsContaining(log, "Sanity check finished");
-		assertEquals(1, logs);
-	}
+        when(sanityCheckRepository.findAll(any(Sort.class))).thenReturn(defaultSanityChecks);
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class)))
+                .thenAnswer(answer -> defaultQueryResult.get(count.getAndIncrement()));
 
-	@Test
-	@SuppressWarnings("unchecked")
-	public void queryWithErrorTest() throws FileNotFoundException, SanityCheckException, MessagingException {
-		Logger log = LogUtil.getDefaultLogger(WrtSanityCheckServiceImpl.class);
+        wrtSanityCheckTasklet.execute();
 
-		BadSqlGrammarException exception = new BadSqlGrammarException(null, "Select * from A inner join B on", null);
+        int logs = LogUtil.countLogsContaining(log, "Sanity check finished");
+        assertEquals(1, logs);
+    }
 
-		when(queryReader.read()).thenReturn(getDefaultQueries());
-		when(jdbcTemplate.query(anyString(), any(RowMapper.class))).thenThrow(exception);
+    @Test
+    public void queryWithErrorTest() throws MessagingException {
+        Logger log = LogUtil.getDefaultLogger(WrtSanityCheckServiceImpl.class);
 
-		wrtSanityCheckTasklet.execute();
+        BadSqlGrammarException exception = new BadSqlGrammarException(null, "Select * from A inner join B on", null);
 
-		// There should be some warning about bad grammar
-		List<String> logs = LogUtil.getLogsContaining(log, "Could not execute the query");
-		assertFalse(logs.isEmpty());
-	}
+        when(sanityCheckRepository.findAll(any(Sort.class))).thenReturn(getDefaultSanityChecks());
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class))).thenThrow(exception);
 
-	private List<Map<String, String>> getDefaultQueryResult() {
-		List<Map<String, String>> result = new ArrayList<>();
+        wrtSanityCheckTasklet.execute();
 
-		int numberOfResults = random.nextInt(MAX_QUERY_RESULT);
-		int numberOfColumns = 1 + random.nextInt(MAX_NUMBER_OF_COLUMNS);
-		for (int i = 0; i < numberOfResults; i++) {
-			Map<String, String> map = new LinkedHashMap<>();
-			for (int j = 0; j < numberOfColumns; j++) {
-				map.put("Col " + j, getRandomResult());
-			}
-			result.add(map);
-		}
+        // There should be some warning about bad grammar
+        List<String> logs = LogUtil.getLogsContaining(log, "Could not execute the query");
+        assertFalse(logs.isEmpty());
+    }
 
-		return result;
-	}
+    @Test
+    public void exclusionTest() throws MessagingException, JSONException {
+        Logger log = LogUtil.getDefaultLogger(WrtSanityCheckServiceImpl.class);
 
-	private String getRandomResult() {
-		String result = "";
-		for (int i = 0; i < random.nextInt(MAX_RESULT_LENGTH); i++) {
-			result += (char) (65 + random.nextInt(26));
-		}
-		return result;
-	}
+        List<SanityCheck> defaultSanityChecks = getDefaultSanityChecks();
+        List<List<JSONObject>> defaultQueryResult = getDefaultQueryResult(defaultSanityChecks);
 
-	private List<QueryBean> getDefaultQueries() {
-		List<QueryBean> result = new ArrayList<>();
+        AtomicInteger count = new AtomicInteger();
 
-		int categories = 1 + random.nextInt(MAX_CATEGORIES);
-		int query = 0;
+        when(sanityCheckRepository.findAll(any(Sort.class))).thenReturn(defaultSanityChecks);
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class)))
+                .thenAnswer(answer -> defaultQueryResult.get(count.getAndIncrement()));
 
-		for (int i = 0; i < categories; i++) {
-			int topics = 1 + random.nextInt(MAX_TOPICS);
-			for (int j = 0; j < topics; j++) {
-				QueryBean queryBean = new QueryBean();
-				queryBean.setCategory("Category " + i);
-				queryBean.setTopic("Topic " + j);
-				queryBean.setQuery("Query " + (query++));
+        wrtSanityCheckTasklet.execute();
 
-				result.add(queryBean);
-			}
-		}
+        int logs = LogUtil.countLogsContaining(log, "Sanity check finished");
+        assertEquals(1, logs);
+    }
 
-		return result;
-	}
+    @Test
+    public void allResultsFalsePositivesTest() throws MessagingException, JSONException {
+        Logger log = LogUtil.getDefaultLogger(WrtSanityCheckServiceImpl.class);
+
+        List<SanityCheck> sanityChecks = new ArrayList<>();
+        SanityCheck sanityCheck = new SanityCheck();
+        sanityCheck.setTopic("Topic 1");
+        sanityCheck.setQuery("select * from Results");
+
+        SanityCheckCategory category = new SanityCheckCategory();
+        category.setName("Category");
+        sanityCheck.setSanityCheckCategory(category);
+
+        sanityChecks.add(sanityCheck);
+
+        LocalDate date = LocalDate.now();
+
+        int nResults = 10;
+
+        List<SanityCheckExclusion> exclusions = new ArrayList<>();
+        SanityCheckExclusion sanityCheckExclusion = new SanityCheckExclusion();
+
+        // The exclusion json will be like the result below, but with less columns
+        // 1 exclusion for them all
+        JSONObject json = new JSONObject();
+        json.put("country", "Brazil");
+        json.put("competitionId", "WC" + date.getYear());
+
+        // As of now, sanity checks stores exclusion as a dumped json
+        sanityCheckExclusion.setExclusion(json.toString());
+        exclusions.add(sanityCheckExclusion);
+        sanityCheck.setExclusions(exclusions);
+
+        List<JSONObject> queryResult = new ArrayList<>();
+
+        // This will be a json found by the sanity check
+        for (int i = 0; i < nResults; i++) {
+            JSONObject jsonResult = new JSONObject();
+            jsonResult.put("id", i);
+            jsonResult.put("personName", "Person " + i);
+            jsonResult.put("competitionId", "WC" + date.getYear());
+            jsonResult.put("country", "Brazil");
+            queryResult.add(jsonResult);
+        }
+
+        when(sanityCheckRepository.findAll(any(Sort.class))).thenReturn(sanityChecks);
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class)))
+                .thenAnswer(answer -> queryResult);
+
+        wrtSanityCheckTasklet.execute();
+
+        int logs = LogUtil.countLogsContaining(log, "All the results are known false positives");
+        assertEquals(1, logs);
+    }
+
+    @Test
+    public void noResultExcludedDespiteHavingExclusionTest() throws MessagingException, JSONException {
+        Logger log = LogUtil.getDefaultLogger(WrtSanityCheckServiceImpl.class);
+
+        List<SanityCheck> sanityChecks = new ArrayList<>();
+        SanityCheck sanityCheck = new SanityCheck();
+        sanityCheck.setTopic("Topic 1");
+        sanityCheck.setQuery("select * from Results");
+
+        SanityCheckCategory category = new SanityCheckCategory();
+        category.setName("Category");
+        sanityCheck.setSanityCheckCategory(category);
+
+        sanityChecks.add(sanityCheck);
+
+        LocalDate date = LocalDate.now();
+
+        int nResults = 10;
+
+        List<SanityCheckExclusion> exclusions = new ArrayList<>();
+        SanityCheckExclusion sanityCheckExclusion = new SanityCheckExclusion();
+
+        // The exclusion json will be like the result below, but with less columns
+        JSONObject json = new JSONObject();
+        json.put("country", "Brazil");
+        json.put("competitionId", "WCA" + date.getYear()); // Slightly different, not excluded
+
+        // As of now, sanity checks stores exclusion as a dumped json
+        sanityCheckExclusion.setExclusion(json.toString());
+        exclusions.add(sanityCheckExclusion);
+        sanityCheck.setExclusions(exclusions);
+
+        List<JSONObject> queryResult = new ArrayList<>();
+
+        // This will be a json found by the sanity check
+        for (int i = 0; i < nResults; i++) {
+            JSONObject jsonResult = new JSONObject();
+            jsonResult.put("id", i);
+            jsonResult.put("personName", "Person " + i);
+            jsonResult.put("competitionId", "WC" + date.getYear());
+            jsonResult.put("country", "Brazil");
+            queryResult.add(jsonResult);
+        }
+
+        when(sanityCheckRepository.findAll(any(Sort.class))).thenReturn(sanityChecks);
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class)))
+                .thenAnswer(answer -> queryResult);
+
+        wrtSanityCheckTasklet.execute();
+
+        int logs = LogUtil.countLogsContaining(log,
+                "There are false positives in the database, but no results were excluded");
+        assertEquals(1, logs);
+    }
+
+    @Test
+    public void someResultExcludedTest() throws MessagingException, JSONException {
+        Logger log = LogUtil.getDefaultLogger(WrtSanityCheckServiceImpl.class);
+
+        List<SanityCheck> sanityChecks = new ArrayList<>();
+        SanityCheck sanityCheck = new SanityCheck();
+        sanityCheck.setTopic("Topic 1");
+        sanityCheck.setQuery("select * from Results");
+
+        SanityCheckCategory category = new SanityCheckCategory();
+        category.setName("Category");
+        sanityCheck.setSanityCheckCategory(category);
+
+        sanityChecks.add(sanityCheck);
+
+        LocalDate date = LocalDate.now();
+
+        int nResults = 10;
+
+        List<SanityCheckExclusion> exclusions = new ArrayList<>();
+        SanityCheckExclusion sanityCheckExclusion = new SanityCheckExclusion();
+
+        // The exclusion json will be like the result below, but with less columns
+        JSONObject json = new JSONObject();
+        json.put("country", "Brazil");
+        json.put("competitionId", "WC" + date.getYear());
+
+        // As of now, sanity checks stores exclusion as a dumped json
+        sanityCheckExclusion.setExclusion(json.toString());
+        exclusions.add(sanityCheckExclusion);
+        sanityCheck.setExclusions(exclusions);
+
+        List<JSONObject> queryResult = new ArrayList<>();
+
+        // This will be a json found by the sanity check
+        for (int i = 0; i < nResults; i++) {
+            JSONObject jsonResult = new JSONObject();
+            jsonResult.put("id", i);
+            jsonResult.put("personName", "Person " + i);
+            jsonResult
+                    .put("competitionId", "WC" + (date.getYear() + (i > 5 ? 1 : 0))); // This will differ in some cases
+            jsonResult.put("country", "Brazil");
+            queryResult.add(jsonResult);
+        }
+
+        when(sanityCheckRepository.findAll(any(Sort.class))).thenReturn(sanityChecks);
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class)))
+                .thenAnswer(answer -> queryResult);
+
+        wrtSanityCheckTasklet.execute();
+
+        int logs = LogUtil.countLogsContaining(log,
+                "There are some false positives, but not all the results were false positives");
+        assertEquals(1, logs);
+    }
+
+    @Test
+    public void moreExclusionThanNeededTest() throws MessagingException, JSONException {
+        Logger log = LogUtil.getDefaultLogger(WrtSanityCheckServiceImpl.class);
+
+        List<SanityCheck> sanityChecks = new ArrayList<>();
+        SanityCheck sanityCheck = new SanityCheck();
+        sanityCheck.setTopic("Topic 1");
+        sanityCheck.setQuery("select * from Results");
+
+        SanityCheckCategory category = new SanityCheckCategory();
+        category.setName("Category");
+        sanityCheck.setSanityCheckCategory(category);
+
+        sanityChecks.add(sanityCheck);
+
+        LocalDate date = LocalDate.now();
+
+        int nResults = 10;
+
+        List<SanityCheckExclusion> exclusions = new ArrayList<>();
+        for (int i = 0; i < nResults + 1; i++) {
+            SanityCheckExclusion sanityCheckExclusion = new SanityCheckExclusion();
+
+            // The exclusion json will be like the result below, but with less columns
+            JSONObject json = new JSONObject();
+            json.put("country", "Brazil");
+            json.put("competitionId", "WC" + date.getYear());
+
+            // As of now, sanity checks stores exclusion as a dumped json
+            sanityCheckExclusion.setExclusion(json.toString());
+            exclusions.add(sanityCheckExclusion);
+        }
+        sanityCheck.setExclusions(exclusions);
+
+        List<JSONObject> queryResult = new ArrayList<>();
+
+        // This will be a json found by the sanity check
+        for (int i = 0; i < nResults; i++) {
+            JSONObject jsonResult = new JSONObject();
+            jsonResult.put("id", i);
+            jsonResult.put("personName", "Person " + i);
+            jsonResult
+                    .put("competitionId", "WC" + (date.getYear() + (i > 5 ? 1 : 0))); // This will differ in some cases
+            jsonResult.put("country", "Brazil");
+            queryResult.add(jsonResult);
+        }
+
+        when(sanityCheckRepository.findAll(any(Sort.class))).thenReturn(sanityChecks);
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class)))
+                .thenAnswer(answer -> queryResult);
+
+        wrtSanityCheckTasklet.execute();
+
+        int logs = LogUtil.countLogsContaining(log, "You have more exclusions than results, check the exclusions");
+        assertEquals(1, logs);
+    }
+
+    private List<List<JSONObject>> getDefaultQueryResult(List<SanityCheck> sanityChecks) throws JSONException {
+        List<List<JSONObject>> result = new ArrayList<>();
+
+        for (int i = 0; i < sanityChecks.size(); i++) {
+            List<JSONObject> list = new ArrayList<>();
+
+            int numberOfResults = random.nextInt(MAX_RESULT_LENGTH);
+            for (int j = 0; j < numberOfResults; j++) {
+                int numberOfColumns = 1 + random.nextInt(MAX_NUMBER_OF_COLUMNS);
+                JSONObject json = new JSONObject();
+                for (int k = 0; k < numberOfColumns; k++) {
+                    json.put("Col " + k, getRandomResult());
+                }
+                list.add(json);
+            }
+            result.add(list);
+        }
+
+        return result;
+    }
+
+    private String getRandomResult() {
+        String result = "";
+        for (int i = 0; i < random.nextInt(MAX_RESULT_LENGTH); i++) {
+            result += (char) (65 + random.nextInt(26));
+        }
+        return result;
+    }
+
+    private List<SanityCheck> getDefaultSanityChecks() {
+        List<SanityCheck> result = new ArrayList<>();
+
+        int categories = 1 + random.nextInt(MAX_CATEGORIES);
+
+        for (int i = 0; i < categories; i++) {
+            int topics = 1 + random.nextInt(MAX_TOPICS);
+
+            SanityCheckCategory sanityCheckCategory = StubUtil.getDefaultSanityCheckCategory(i);
+            for (int j = 0; j < topics; j++) {
+                int id = i * topics + j;
+                SanityCheck sanityCheck = StubUtil.getDefaultSanityCheck(sanityCheckCategory, id);
+
+                result.add(sanityCheck);
+            }
+        }
+        return result;
+    }
 
 }

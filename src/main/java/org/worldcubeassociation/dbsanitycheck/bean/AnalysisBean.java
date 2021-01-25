@@ -1,28 +1,28 @@
 package org.worldcubeassociation.dbsanitycheck.bean;
 
+import lombok.Data;
+import org.json.JSONObject;
+import org.worldcubeassociation.dbsanitycheck.model.SanityCheck;
+
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
-import lombok.Getter;
-import lombok.Setter;
+@Data
+public class AnalysisBean {
+    private List<JSONObject> analysis;
+    private SanityCheck sanityCheck;
 
-@Getter
-@Setter
-public class AnalysisBean extends BaseBean {
-	private List<Map<String, String>> analysis;
+    public List<String> getKeys() {
+        List<String> result = new ArrayList<>();
+        if (analysis.isEmpty()) { // Extra check. It should not be called
+            return result;
+        }
 
-	// Since we're using LinkedHashMap, it makes sense to assume that the keys
-	// maintain the order
-	public List<String> getKeys() {
-		List<String> result = new ArrayList<>();
-		if (analysis.isEmpty()) { // Extra check. It should not be called
-			return result;
-		}
-
-		for (String header : analysis.get(0).keySet()) {
-			result.add(header);
-		}
-		return result;
-	}
+        Iterator<String> headers = analysis.get(0).keys();
+        while (headers.hasNext()) {
+            result.add(headers.next());
+        }
+        return result;
+    }
 }
