@@ -111,7 +111,7 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
                 }
                 return out;
             });
-            log.info("* Found {} results for {}", result.size(), topic);
+            log.info("Found {} results for {}", result.size(), topic);
 
             removeExclusions(result, sanityCheck);
         } catch (Exception e) {
@@ -163,7 +163,7 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
         result.clear();
         result.addAll(remains);
 
-        log.info("* Remain size: {}", result.size());
+        log.info("Remaining size: {}", result.size());
     }
 
     // Returns true if one of the exclusions matches sanity check result

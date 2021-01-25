@@ -131,9 +131,9 @@ public class EmailServiceImplTest {
             int inconsistencies = 1 + random.nextInt(MAX_INCONSISTENCIES_FOUND);
 
             List<JSONObject> analysis = new ArrayList<>();
+            int columnsFound = 1 + random.nextInt(MAX_COLUMNS_FOUND);
             for (int j = 0; j < inconsistencies; j++) {
                 JSONObject jsonObject = new JSONObject();
-                int columnsFound = 1 + random.nextInt(MAX_COLUMNS_FOUND);
                 for (int k = 0; k < columnsFound; k++) {
                     jsonObject.put("col " + k, "result " + k);
                 }

@@ -124,7 +124,8 @@ public class EmailServiceImpl implements EmailService {
             sb.append(" <table style=\"border: 1px solid black;\">\n");
             sb.append("  <thead>\n");
             sb.append("   <tr style=\"background-color: #f2f2f2;\">");
-            for (String header : analysis.getKeys()) {
+            List<String> headers = analysis.getKeys();
+            for (String header : headers) {
                 sb.append("<th scope=\"col\" style=\"border: 1px solid black;\">").append(header).append("</th>");
             }
             sb.append("\n   </tr>\n");
@@ -132,8 +133,8 @@ public class EmailServiceImpl implements EmailService {
             sb.append("  <tbody>\n");
             for (JSONObject item : analysis.getAnalysis()) {
                 sb.append("   <tr>\n");
-                for (int j = 0; j < item.names().length(); j++) {
-                    sb.append("    <td style=\"border: 1px solid black;\">").append(item.get(item.names().getString(j)))
+                for (int j = 0; j < headers.size(); j++) {
+                    sb.append("    <td style=\"border: 1px solid black;\">").append(item.get(headers.get(j)))
                             .append("</td>\n");
                 }
                 sb.append("   </tr>\n");
