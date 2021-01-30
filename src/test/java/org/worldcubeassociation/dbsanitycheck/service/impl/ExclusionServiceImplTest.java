@@ -15,10 +15,10 @@ import java.util.Random;
 
 import static org.junit.Assert.assertNotNull;
 
-public class SanityCheckExclusionServiceImplTest {
+public class ExclusionServiceImplTest {
 
     @InjectMocks
-    private SanityCheckExclusionServiceImpl sanityCheckExclusionService;
+    private ExclusionServiceImpl sanityCheckExclusionService;
 
     private static final Random RANDOM = new Random();
 

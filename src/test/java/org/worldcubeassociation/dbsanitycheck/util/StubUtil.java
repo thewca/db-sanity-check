@@ -1,7 +1,7 @@
 package org.worldcubeassociation.dbsanitycheck.util;
 
 import org.worldcubeassociation.dbsanitycheck.model.SanityCheck;
-import org.worldcubeassociation.dbsanitycheck.model.SanityCheckCategory;
+import org.worldcubeassociation.dbsanitycheck.model.Category;
 
 import java.util.ArrayList;
 
@@ -9,23 +9,23 @@ public class StubUtil {
     private StubUtil() {
     }
 
-    public static SanityCheck getDefaultSanityCheck(SanityCheckCategory sanityCheckCategory, int id) {
+    public static SanityCheck getDefaultSanityCheck(Category category, int id) {
         SanityCheck sanityCheck = new SanityCheck();
         sanityCheck.setId(id);
         sanityCheck.setQuery("Query " + id);
         sanityCheck.setExclusions(new ArrayList<>());
         sanityCheck.setTopic("Topic " + id);
-        sanityCheck.setSanityCheckCategoryId(sanityCheckCategory.getId());
-        sanityCheck.setSanityCheckCategory(sanityCheckCategory);
+        sanityCheck.setSanityCheckCategoryId(category.getId());
+        sanityCheck.setCategory(category);
         sanityCheck.setComments("Comment " + id);
         return sanityCheck;
     }
 
-    public static SanityCheckCategory getDefaultSanityCheckCategory(int id) {
-        SanityCheckCategory sanityCheckCategory = new SanityCheckCategory();
-        sanityCheckCategory.setId(id);
-        sanityCheckCategory.setName("Category " + id);
-        return sanityCheckCategory;
+    public static Category getDefaultSanityCheckCategory(int id) {
+        Category category = new Category();
+        category.setId(id);
+        category.setName("Category " + id);
+        return category;
     }
 
     public static SanityCheck getDefaultSanityCheck(int id) {

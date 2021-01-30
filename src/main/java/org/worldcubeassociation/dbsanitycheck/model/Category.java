@@ -9,7 +9,7 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name = "sanity_check_categories")
-public class SanityCheckCategory {
+public class Category {
 	@Id
 	private Integer id;
 

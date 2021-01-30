@@ -3,14 +3,14 @@ package org.worldcubeassociation.dbsanitycheck.service.impl;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.stereotype.Service;
 import org.worldcubeassociation.dbsanitycheck.bean.AnalysisBean;
-import org.worldcubeassociation.dbsanitycheck.service.SanityCheckExclusionService;
+import org.worldcubeassociation.dbsanitycheck.service.ExclusionService;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-public class SanityCheckExclusionServiceImpl implements SanityCheckExclusionService {
+public class ExclusionServiceImpl implements ExclusionService {
     @Override
     public ByteArrayResource buildExclusionSuggestionFile(List<AnalysisBean> analysisResult) {
         String textFile = "";
@@ -24,7 +24,7 @@ public class SanityCheckExclusionServiceImpl implements SanityCheckExclusionServ
         int sanityCheckId = analysis.getSanityCheck().getId();
 
         String identifier =
-                String.format("-- %s. [%s] %s", index + 1, analysis.getSanityCheck().getSanityCheckCategory().getName(),
+                String.format("-- %s. [%s] %s", index + 1, analysis.getSanityCheck().getCategory().getName(),
                         analysis.getSanityCheck().getTopic());
 
         // Empty comment so WRT can easily remember to change this

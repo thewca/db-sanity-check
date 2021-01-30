@@ -6,6 +6,6 @@ import org.worldcubeassociation.dbsanitycheck.bean.AnalysisBean;
 import java.util.List;
 
 @FunctionalInterface
-public interface SanityCheckExclusionService {
+public interface ExclusionService {
     ByteArrayResource buildExclusionSuggestionFile(List<AnalysisBean> analysisResult);
 }
