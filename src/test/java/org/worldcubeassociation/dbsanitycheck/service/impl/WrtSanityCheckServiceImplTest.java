@@ -373,7 +373,7 @@ public class WrtSanityCheckServiceImplTest {
         for (int i = 0; i < categories; i++) {
             int topics = 1 + random.nextInt(MAX_TOPICS);
 
-            Category category = StubUtil.getDefaultSanityCheckCategory(i);
+            Category category = StubUtil.getDefaultCategory(i);
             for (int j = 0; j < topics; j++) {
                 int id = i * topics + j;
                 SanityCheck sanityCheck = StubUtil.getDefaultSanityCheck(category, id);

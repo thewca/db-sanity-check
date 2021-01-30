@@ -21,7 +21,7 @@ public class StubUtil {
         return sanityCheck;
     }
 
-    public static Category getDefaultSanityCheckCategory(int id) {
+    public static Category getDefaultCategory(int id) {
         Category category = new Category();
         category.setId(id);
         category.setName("Category " + id);
@@ -29,6 +29,6 @@ public class StubUtil {
     }
 
     public static SanityCheck getDefaultSanityCheck(int id) {
-        return getDefaultSanityCheck(getDefaultSanityCheckCategory(id), id);
+        return getDefaultSanityCheck(getDefaultCategory(id), id);
     }
 }
