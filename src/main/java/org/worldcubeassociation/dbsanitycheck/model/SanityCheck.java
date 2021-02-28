@@ -31,9 +31,9 @@ public class SanityCheck {
 
 	@OneToOne
 	@JoinColumn(name = "sanity_check_category_id", referencedColumnName = "id")
-	private SanityCheckCategory sanityCheckCategory;
+	private Category category;
 
 	@OneToMany(fetch = FetchType.EAGER)
 	@JoinColumn(name = "sanity_check_id", referencedColumnName = "id")
-	private List<SanityCheckExclusion> exclusions;
+	private List<Exclusion> exclusions;
 }

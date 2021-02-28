@@ -17,7 +17,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.worldcubeassociation.dbsanitycheck.bean.AnalysisBean;
 import org.worldcubeassociation.dbsanitycheck.bean.SanityCheckWithErrorBean;
 import org.worldcubeassociation.dbsanitycheck.model.SanityCheck;
-import org.worldcubeassociation.dbsanitycheck.service.SanityCheckExclusionService;
+import org.worldcubeassociation.dbsanitycheck.service.ExclusionService;
 import org.worldcubeassociation.dbsanitycheck.util.LogUtil;
 import org.worldcubeassociation.dbsanitycheck.util.StubUtil;
 
@@ -44,7 +44,7 @@ public class EmailServiceImplTest {
     private JavaMailSender emailSender;
 
     @Mock
-    private SanityCheckExclusionService sanityCheckExclusionService;
+    private ExclusionService exclusionService;
 
     private static final Random random = new Random();
     private static final int MAX_TOPICS_FOUND = 10;
@@ -71,7 +71,7 @@ public class EmailServiceImplTest {
 
         JavaMailSenderImpl sender = new JavaMailSenderImpl();
         when(emailSender.createMimeMessage()).thenReturn(sender.createMimeMessage());
-        when(sanityCheckExclusionService.buildExclusionSuggestionFile(anyList()))
+        when(exclusionService.buildExclusionSuggestionFile(anyList()))
                 .thenReturn(new ByteArrayResource(textFile.getBytes(
                         StandardCharsets.UTF_8)));
 

@@ -13,7 +13,7 @@ import org.worldcubeassociation.dbsanitycheck.bean.AnalysisBean;
 import org.worldcubeassociation.dbsanitycheck.bean.SanityCheckWithErrorBean;
 import org.worldcubeassociation.dbsanitycheck.model.SanityCheck;
 import org.worldcubeassociation.dbsanitycheck.service.EmailService;
-import org.worldcubeassociation.dbsanitycheck.service.SanityCheckExclusionService;
+import org.worldcubeassociation.dbsanitycheck.service.ExclusionService;
 
 import java.io.File;
 import java.time.LocalDate;
@@ -45,7 +45,7 @@ public class EmailServiceImpl implements EmailService {
     private JavaMailSender emailSender;
 
     @Autowired
-    private SanityCheckExclusionService sanityCheckExclusionService;
+    private ExclusionService exclusionService;
 
     private static final boolean MULTIPART = true;
 
@@ -77,7 +77,7 @@ public class EmailServiceImpl implements EmailService {
             helper.addAttachment("db-sanity-check.txt", file);
 
             ByteArrayResource exclusionSuggestion =
-                    sanityCheckExclusionService.buildExclusionSuggestionFile(analysisResult);
+                    exclusionService.buildExclusionSuggestionFile(analysisResult);
             if (exclusionSuggestion != null) {
                 // txt for better reading in the email
                 helper.addAttachment("exclusion-suggestions.txt", exclusionSuggestion);
@@ -118,7 +118,7 @@ public class EmailServiceImpl implements EmailService {
         for (int i = 0; i < analysisResult.size(); i++) {
             AnalysisBean analysis = analysisResult.get(i);
             sb.append(String.format("<h3>%s. [%s] %s</h3>%n", i + 1,
-                    analysis.getSanityCheck().getSanityCheckCategory().getName(),
+                    analysis.getSanityCheck().getCategory().getName(),
                     analysis.getSanityCheck().getTopic()));
             sb.append("<div style=\"overflow-x: auto;\">\n");
             sb.append(" <table style=\"border: 1px solid black;\">\n");
@@ -157,7 +157,7 @@ public class EmailServiceImpl implements EmailService {
         for (int i = 0; i < queriesWithError.size(); i++) {
             SanityCheckWithErrorBean queryWithErrorBean = queriesWithError.get(i);
             SanityCheck sanityCheck = queryWithErrorBean.getSanityCheck();
-            sb.append(String.format("<p>%s. [%s] %s</p>%n", i + 1, sanityCheck.getSanityCheckCategory().getName(),
+            sb.append(String.format("<p>%s. [%s] %s</p>%n", i + 1, sanityCheck.getCategory().getName(),
                     sanityCheck.getTopic()));
             sb.append(String.format("<code>%s</code>\n", sanityCheck.getQuery()));
             sb.append(String.format("<p><b>Reason:</b> %s</p>\n", queryWithErrorBean.getError()));

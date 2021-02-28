@@ -10,7 +10,7 @@ import lombok.Data;
 @Data
 @Entity
 @Table(name = "sanity_check_exclusions")
-public class SanityCheckExclusion {
+public class Exclusion {
 	@Id
 	private Integer id;
 	

@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 import org.worldcubeassociation.dbsanitycheck.bean.AnalysisBean;
 import org.worldcubeassociation.dbsanitycheck.bean.SanityCheckWithErrorBean;
 import org.worldcubeassociation.dbsanitycheck.model.SanityCheck;
-import org.worldcubeassociation.dbsanitycheck.model.SanityCheckExclusion;
+import org.worldcubeassociation.dbsanitycheck.model.Exclusion;
 import org.worldcubeassociation.dbsanitycheck.repository.SanityCheckRepository;
 import org.worldcubeassociation.dbsanitycheck.service.EmailService;
 import org.worldcubeassociation.dbsanitycheck.service.WrtSanityCheckService;
@@ -67,7 +67,7 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
         for (SanityCheck sanityCheck : sanityChecks) {
 
             // We log at each new category
-            String category = sanityCheck.getSanityCheckCategory().getName();
+            String category = sanityCheck.getCategory().getName();
             if (prevCategory == null || !prevCategory.equals(category)) {
                 log.info(" ========== Category = {} ========== ", category);
                 prevCategory = category;
@@ -133,7 +133,7 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
     }
 
     private void removeExclusions(List<JSONObject> result, SanityCheck sanityCheck) {
-        List<JSONObject> exclusions = sanityCheck.getExclusions().stream().map(SanityCheckExclusion::getExclusion)
+        List<JSONObject> exclusions = sanityCheck.getExclusions().stream().map(Exclusion::getExclusion)
                 .map(JSONObject::new).collect(Collectors.toList());
 
         if (exclusions.isEmpty()) {
@@ -197,13 +197,13 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
 
     private void showResults() {
         analysisResult.forEach(item -> {
-            log.warn(" ** Inconsistency at [{}] {}", item.getSanityCheck().getSanityCheckCategory().getName(),
+            log.warn(" ** Inconsistency at [{}] {}", item.getSanityCheck().getCategory().getName(),
                     item.getSanityCheck().getTopic());
             item.getAnalysis().forEach(it -> log.info(it.toString()));
         });
 
         queriesWithError.forEach(item -> {
-            log.warn(" ** Query with error in [{}] {}", item.getSanityCheck().getSanityCheckCategory().getName(),
+            log.warn(" ** Query with error in [{}] {}", item.getSanityCheck().getCategory().getName(),
                     item.getSanityCheck().getTopic());
             log.warn(item.getError());
         });

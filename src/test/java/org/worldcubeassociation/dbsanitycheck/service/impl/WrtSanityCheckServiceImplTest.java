@@ -13,8 +13,8 @@ import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.worldcubeassociation.dbsanitycheck.model.SanityCheck;
-import org.worldcubeassociation.dbsanitycheck.model.SanityCheckCategory;
-import org.worldcubeassociation.dbsanitycheck.model.SanityCheckExclusion;
+import org.worldcubeassociation.dbsanitycheck.model.Category;
+import org.worldcubeassociation.dbsanitycheck.model.Exclusion;
 import org.worldcubeassociation.dbsanitycheck.repository.SanityCheckRepository;
 import org.worldcubeassociation.dbsanitycheck.service.EmailService;
 import org.worldcubeassociation.dbsanitycheck.util.LogUtil;
@@ -122,9 +122,9 @@ public class WrtSanityCheckServiceImplTest {
         sanityCheck.setTopic("Topic 1");
         sanityCheck.setQuery("select * from Results");
 
-        SanityCheckCategory category = new SanityCheckCategory();
+        Category category = new Category();
         category.setName("Category");
-        sanityCheck.setSanityCheckCategory(category);
+        sanityCheck.setCategory(category);
 
         sanityChecks.add(sanityCheck);
 
@@ -132,8 +132,8 @@ public class WrtSanityCheckServiceImplTest {
 
         int nResults = 10;
 
-        List<SanityCheckExclusion> exclusions = new ArrayList<>();
-        SanityCheckExclusion sanityCheckExclusion = new SanityCheckExclusion();
+        List<Exclusion> exclusions = new ArrayList<>();
+        Exclusion exclusion = new Exclusion();
 
         // The exclusion json will be like the result below, but with less columns
         // 1 exclusion for them all
@@ -142,8 +142,8 @@ public class WrtSanityCheckServiceImplTest {
         json.put("competitionId", "WC" + date.getYear());
 
         // As of now, sanity checks stores exclusion as a dumped json
-        sanityCheckExclusion.setExclusion(json.toString());
-        exclusions.add(sanityCheckExclusion);
+        exclusion.setExclusion(json.toString());
+        exclusions.add(exclusion);
         sanityCheck.setExclusions(exclusions);
 
         List<JSONObject> queryResult = new ArrayList<>();
@@ -177,9 +177,9 @@ public class WrtSanityCheckServiceImplTest {
         sanityCheck.setTopic("Topic 1");
         sanityCheck.setQuery("select * from Results");
 
-        SanityCheckCategory category = new SanityCheckCategory();
+        Category category = new Category();
         category.setName("Category");
-        sanityCheck.setSanityCheckCategory(category);
+        sanityCheck.setCategory(category);
 
         sanityChecks.add(sanityCheck);
 
@@ -187,8 +187,8 @@ public class WrtSanityCheckServiceImplTest {
 
         int nResults = 10;
 
-        List<SanityCheckExclusion> exclusions = new ArrayList<>();
-        SanityCheckExclusion sanityCheckExclusion = new SanityCheckExclusion();
+        List<Exclusion> exclusions = new ArrayList<>();
+        Exclusion exclusion = new Exclusion();
 
         // The exclusion json will be like the result below, but with less columns
         JSONObject json = new JSONObject();
@@ -196,8 +196,8 @@ public class WrtSanityCheckServiceImplTest {
         json.put("competitionId", "WCA" + date.getYear()); // Slightly different, not excluded
 
         // As of now, sanity checks stores exclusion as a dumped json
-        sanityCheckExclusion.setExclusion(json.toString());
-        exclusions.add(sanityCheckExclusion);
+        exclusion.setExclusion(json.toString());
+        exclusions.add(exclusion);
         sanityCheck.setExclusions(exclusions);
 
         List<JSONObject> queryResult = new ArrayList<>();
@@ -232,9 +232,9 @@ public class WrtSanityCheckServiceImplTest {
         sanityCheck.setTopic("Topic 1");
         sanityCheck.setQuery("select * from Results");
 
-        SanityCheckCategory category = new SanityCheckCategory();
+        Category category = new Category();
         category.setName("Category");
-        sanityCheck.setSanityCheckCategory(category);
+        sanityCheck.setCategory(category);
 
         sanityChecks.add(sanityCheck);
 
@@ -242,8 +242,8 @@ public class WrtSanityCheckServiceImplTest {
 
         int nResults = 10;
 
-        List<SanityCheckExclusion> exclusions = new ArrayList<>();
-        SanityCheckExclusion sanityCheckExclusion = new SanityCheckExclusion();
+        List<Exclusion> exclusions = new ArrayList<>();
+        Exclusion exclusion = new Exclusion();
 
         // The exclusion json will be like the result below, but with less columns
         JSONObject json = new JSONObject();
@@ -251,8 +251,8 @@ public class WrtSanityCheckServiceImplTest {
         json.put("competitionId", "WC" + date.getYear());
 
         // As of now, sanity checks stores exclusion as a dumped json
-        sanityCheckExclusion.setExclusion(json.toString());
-        exclusions.add(sanityCheckExclusion);
+        exclusion.setExclusion(json.toString());
+        exclusions.add(exclusion);
         sanityCheck.setExclusions(exclusions);
 
         List<JSONObject> queryResult = new ArrayList<>();
@@ -288,9 +288,9 @@ public class WrtSanityCheckServiceImplTest {
         sanityCheck.setTopic("Topic 1");
         sanityCheck.setQuery("select * from Results");
 
-        SanityCheckCategory category = new SanityCheckCategory();
+        Category category = new Category();
         category.setName("Category");
-        sanityCheck.setSanityCheckCategory(category);
+        sanityCheck.setCategory(category);
 
         sanityChecks.add(sanityCheck);
 
@@ -298,9 +298,9 @@ public class WrtSanityCheckServiceImplTest {
 
         int nResults = 10;
 
-        List<SanityCheckExclusion> exclusions = new ArrayList<>();
+        List<Exclusion> exclusions = new ArrayList<>();
         for (int i = 0; i < nResults + 1; i++) {
-            SanityCheckExclusion sanityCheckExclusion = new SanityCheckExclusion();
+            Exclusion exclusion = new Exclusion();
 
             // The exclusion json will be like the result below, but with less columns
             JSONObject json = new JSONObject();
@@ -308,8 +308,8 @@ public class WrtSanityCheckServiceImplTest {
             json.put("competitionId", "WC" + date.getYear());
 
             // As of now, sanity checks stores exclusion as a dumped json
-            sanityCheckExclusion.setExclusion(json.toString());
-            exclusions.add(sanityCheckExclusion);
+            exclusion.setExclusion(json.toString());
+            exclusions.add(exclusion);
         }
         sanityCheck.setExclusions(exclusions);
 
@@ -373,10 +373,10 @@ public class WrtSanityCheckServiceImplTest {
         for (int i = 0; i < categories; i++) {
             int topics = 1 + random.nextInt(MAX_TOPICS);
 
-            SanityCheckCategory sanityCheckCategory = StubUtil.getDefaultSanityCheckCategory(i);
+            Category category = StubUtil.getDefaultCategory(i);
             for (int j = 0; j < topics; j++) {
                 int id = i * topics + j;
-                SanityCheck sanityCheck = StubUtil.getDefaultSanityCheck(sanityCheckCategory, id);
+                SanityCheck sanityCheck = StubUtil.getDefaultSanityCheck(category, id);
 
                 result.add(sanityCheck);
             }
