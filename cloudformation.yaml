@@ -41,9 +41,26 @@ Resources:
           - Name: "service.mail.send"
             Value: true
           - Name: "service.mail.to"
-            Value:
+            Value: ""
           - Name: "spring.profiles.active"
             Value: prod
+        Secrets:
+          - Name: "spring.datasource.url"
+            ValueFrom: ""
+          - Name: "spring.datasource.username"
+            ValueFrom: ""
+          - Name: "spring.datasource.password"
+            ValueFrom: ""
+          - Name: "Spring.mail.host"
+            ValueFrom: ""
+          - Name: "Spring.mail.authentication"
+            ValueFrom: ""
+          - Name: "spring.mail.username"
+            ValueFrom: ""
+          - Name: "Spring.mail.password"
+            ValueFrom: ""
+          - Name: "service.mail.from"
+            ValueFrom: ""
         ExecutionRoleArn: arn:aws:iam::${env:ACCOUNT_ID}:role/ExecutionTask
         JobRoleArn: arn:aws:iam::${env:ACCOUNT_ID}:role/ExecutionTask
       JobDefinitionName: SanityCheckJob
