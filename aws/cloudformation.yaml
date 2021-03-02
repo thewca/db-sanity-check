@@ -1,5 +1,5 @@
-AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Sanity check environment'
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Sanity check environment"
 Resources:
   SanityCheck:
     Type: AWS::Batch::ComputeEnvironment
@@ -8,18 +8,18 @@ Resources:
       ServiceRole: arn:aws:iam::${env:ACCOUNT_ID}:role/BatchRole
       ComputeEnvironmentName: SanityCheck
       ComputeResources:
-        MaxvCpus: 1
+        MinvCpus: 0
+        MaxvCpus: 4
+        DesiredvCpus: 1
         SecurityGroupIds:
           - ${env:SECURITY_GROUP_ID}
         Type: SPOT
         Subnets:
           - ${env:SUBNET_ID}
-        MinvCpus: 0
         InstanceRole: ecsInstanceRole
         AllocationStrategy: SPOT_CAPACITY_OPTIMIZED
         InstanceTypes:
           - optimal
-        DesiredvCpus: 1
       State: ENABLED
   SanityCheckQueue:
     Type: AWS::Batch::JobQueue
