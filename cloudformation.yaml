@@ -30,3 +30,27 @@ Resources:
       JobQueueName: SanityCheckQueue
       Priority: 1
       State: ENABLED
+  SanityCheckJob:
+    Type: AWS::Batch::JobDefinition
+    Properties:
+      ContainerProperties:
+        Vcpus: 1
+        Image: campos20/db-sanity-check
+        Memory: 2048
+        Environment:
+          - Name: "service.mail.send"
+            Value: true
+          - Name: "service.mail.to"
+            Value:
+          - Name: "spring.profiles.active"
+            Value: prod
+        ExecutionRoleArn: arn:aws:iam::${env:ACCOUNT_ID}:role/ExecutionTask
+        JobRoleArn: arn:aws:iam::${env:ACCOUNT_ID}:role/ExecutionTask
+      JobDefinitionName: SanityCheckJob
+      PlatformCapabilities:
+        - EC2
+      RetryStrategy:
+        Attempts: 1
+      Timeout:
+        AttemptDurationSeconds: 1200
+      Type: container
