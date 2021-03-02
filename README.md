@@ -45,3 +45,9 @@ It will ask you to run in sudo mode in order to execute the sql.
 This project uses [Maven](https://maven.apache.org/) as the build system. It was built using [Spring Boot](https://spring.io/projects/spring-boot), an awesome framework also for building batches/jobs.
 
 If you open the project in an IDE and the build seems to be failing (getters, setters, log...), you may need to install [lombok](https://projectlombok.org/).
+
+## Deploy to production
+
+You'll need the [AWS CLI](https://aws.amazon.com/cli/). After you configure your credentials and replace the environment variables in the `cloudformation.yaml`, run in the root
+
+`aws cloudformation deploy --template-file cloudformation.yaml --stack-name sanity-check`

@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Sanity check environment'
+Resources:
+  SanityCheck:
+    Type: AWS::Batch::ComputeEnvironment
+    Properties:
+      Type: MANAGED
+      ServiceRole: arn:aws:iam::${env:ACCOUNT_ID}:role/BatchRole
+      ComputeEnvironmentName: SanityCheck
+      ComputeResources:
+        MaxvCpus: 1
+        SecurityGroupIds:
+          - ${env:SECURITY_GROUP_ID}
+        Type: SPOT
+        Subnets:
+          - ${env:SUBNET_ID}
+        MinvCpus: 0
+        InstanceRole: ecsInstanceRole
+        AllocationStrategy: SPOT_CAPACITY_OPTIMIZED
+        InstanceTypes:
+          - optimal
+        DesiredvCpus: 1
+      State: ENABLED
+  SanityCheckQueue:
+    Type: AWS::Batch::JobQueue
+    Properties:
+      ComputeEnvironmentOrder:
+        - Order: 1
+          ComputeEnvironment: !Ref SanityCheckEnv
+      JobQueueName: SanityCheckQueue
+      Priority: 1
+      State: ENABLED
+  SanityCheckJob:
+    Type: AWS::Batch::JobDefinition
+    Properties:
+      ContainerProperties:
+        Vcpus: 1
+        Image: campos20/db-sanity-check
+        Memory: 2048
+        Environment:
+          - Name: "service.mail.send"
+            Value: true
+          - Name: "service.mail.to"
+            Value: ""
+          - Name: "spring.profiles.active"
+            Value: prod
+        Secrets:
+          - Name: "spring.datasource.url"
+            ValueFrom: ""
+          - Name: "spring.datasource.username"
+            ValueFrom: ""
+          - Name: "spring.datasource.password"
+            ValueFrom: ""
+          - Name: "Spring.mail.host"
+            ValueFrom: ""
+          - Name: "Spring.mail.authentication"
+            ValueFrom: ""
+          - Name: "spring.mail.username"
+            ValueFrom: ""
+          - Name: "Spring.mail.password"
+            ValueFrom: ""
+          - Name: "service.mail.from"
+            ValueFrom: ""
+        ExecutionRoleArn: arn:aws:iam::${env:ACCOUNT_ID}:role/ExecutionTask
+        JobRoleArn: arn:aws:iam::${env:ACCOUNT_ID}:role/ExecutionTask
+      JobDefinitionName: SanityCheckJob
+      PlatformCapabilities:
+        - EC2
+      RetryStrategy:
+        Attempts: 1
+      Timeout:
+        AttemptDurationSeconds: 1200
+      Type: container
