@@ -21,3 +21,12 @@ Resources:
           - optimal
         DesiredvCpus: 1
       State: ENABLED
+  SanityCheckQueue:
+    Type: AWS::Batch::JobQueue
+    Properties:
+      ComputeEnvironmentOrder:
+        - Order: 1
+          ComputeEnvironment: !Ref SanityCheckEnv
+      JobQueueName: SanityCheckQueue
+      Priority: 1
+      State: ENABLED
