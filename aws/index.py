@@ -1,5 +1,8 @@
-import json
+# This function is pasted in the cloudformation as inline function
+# quite manual, but this should not change that much
+# and it saves some steps in the build
 
+import json
 import boto3
 
 client = boto3.client('batch')
