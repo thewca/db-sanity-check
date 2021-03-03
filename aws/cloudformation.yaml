@@ -1,0 +1,189 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Sanity check environment"
+Resources:
+  SanityCheck:
+    Type: AWS::Batch::ComputeEnvironment
+    Properties:
+      Type: MANAGED
+      ServiceRole: arn:aws:iam::${env:ACCOUNT_ID}:role/BatchRole
+      ComputeEnvironmentName: SanityCheck
+      ComputeResources:
+        MinvCpus: 0
+        MaxvCpus: 4
+        DesiredvCpus: 1
+        SecurityGroupIds:
+          - ${env:SECURITY_GROUP_ID}
+        Type: SPOT
+        Subnets:
+          - ${env:SUBNET_ID}
+        InstanceRole: ecsInstanceRole
+        AllocationStrategy: SPOT_CAPACITY_OPTIMIZED
+        InstanceTypes:
+          - optimal
+      State: ENABLED
+  SanityCheckQueue:
+    Type: AWS::Batch::JobQueue
+    Properties:
+      ComputeEnvironmentOrder:
+        - Order: 1
+          ComputeEnvironment: !Ref SanityCheckEnv
+      JobQueueName: SanityCheckQueue
+      Priority: 1
+      State: ENABLED
+  SanityCheckJob:
+    Type: AWS::Batch::JobDefinition
+    Properties:
+      ContainerProperties:
+        Vcpus: 1
+        Image: campos20/db-sanity-check
+        Memory: 2048
+        Environment:
+          - Name: "service.mail.send"
+            Value: true
+          - Name: "service.mail.to"
+            Value: ""
+          - Name: "spring.profiles.active"
+            Value: prod
+        Secrets:
+          - Name: "spring.datasource.url"
+            ValueFrom: ""
+          - Name: "spring.datasource.username"
+            ValueFrom: ""
+          - Name: "spring.datasource.password"
+            ValueFrom: ""
+          - Name: "Spring.mail.host"
+            ValueFrom: ""
+          - Name: "Spring.mail.authentication"
+            ValueFrom: ""
+          - Name: "spring.mail.username"
+            ValueFrom: ""
+          - Name: "Spring.mail.password"
+            ValueFrom: ""
+          - Name: "service.mail.from"
+            ValueFrom: ""
+        ExecutionRoleArn: arn:aws:iam::${env:ACCOUNT_ID}:role/ExecutionTask
+        JobRoleArn: arn:aws:iam::${env:ACCOUNT_ID}:role/ExecutionTask
+      JobDefinitionName: SanityCheckJob
+      PlatformCapabilities:
+        - EC2
+      RetryStrategy:
+        Attempts: 1
+      Timeout:
+        AttemptDurationSeconds: 1200
+      Type: container
+  SanityCheckTriggerLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+
+
+          client = boto3.client('batch')
+
+          def lambda_handler(event, context):
+              response = client.submit_job(
+                  jobName='SanityCheck',
+                  jobDefinition='SanityCheckJob',
+                  jobQueue='SanityCheckQueue',
+              )
+              return {
+                  "statusCode": 200,
+                  "headers": {
+                      "Content-Type": "application/json"
+                  },
+                  "body": json.dumps({
+                      "response ": json.dumps(response)
+                  })
+              }
+      FunctionName: SanityCheckTrigger
+      Handler: index.lambda_handler
+      Role: arn:aws:iam::285938427530:role/lambda-sanity-check
+      Runtime: python3.8
+      Timeout: 30
+  AmiUpdateTriggerEvent:
+    Type: AWS::Events::Rule
+    Properties:
+      ScheduleExpression: "cron(0 8 1 * ? *)"
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt SanityCheckTriggerLambda.Arn
+          Id: AmiUpdateTriggerEvent
+  AmiUpdateLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref SanityCheckTriggerLambda
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt AmiUpdateTriggerEvent.Arn
+  ApiGatewayRestApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      ApiKeySourceType: HEADER
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+      Name: lambda-api
+  ApiGatewayResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt ApiGatewayRestApi.RootResourceId
+      PathPart: sanity-check
+      RestApiId: !Ref ApiGatewayRestApi
+  ApiGatewayMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      ApiKeyRequired: false
+      AuthorizationType: NONE
+      HttpMethod: POST
+      Integration:
+        ConnectionType: INTERNET
+        Credentials: !GetAtt ApiGatewayIamRole.Arn
+        IntegrationHttpMethod: POST
+        PassthroughBehavior: WHEN_NO_MATCH
+        TimeoutInMillis: 29000
+        Type: AWS_PROXY
+        Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SanityCheckTriggerLambda.Arn}/invocations"
+      OperationName: "lambda"
+      ResourceId: !Ref ApiGatewayResource
+      RestApiId: !Ref ApiGatewayRestApi
+  ApiGatewayModel:
+    Type: AWS::ApiGateway::Model
+    Properties:
+      ContentType: "application/json"
+      RestApiId: !Ref ApiGatewayRestApi
+      Schema: {}
+  ApiGatewayStage:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      DeploymentId: !Ref ApiGatewayDeployment
+      RestApiId: !Ref ApiGatewayRestApi
+      StageName: "v0"
+  ApiGatewayDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn: ApiGatewayMethod
+    Properties:
+      RestApiId: !Ref ApiGatewayRestApi
+  ApiGatewayIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: ""
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "apigateway.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        - PolicyName: LambdaAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action: "lambda:*"
+                Resource: !GetAtt SanityCheckTriggerLambda.Arn

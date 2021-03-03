@@ -10,7 +10,7 @@ You should an internal database for handling WCA data.
 
 In case you do not have it installed yet, you will need to get MySQL.
 
-* Install [MySQL 8.0](https://dev.mysql.com/doc/refman/8.0/en/linux-installation.html), and set it up with a user with username "root" with an empty password.
+- Install [MySQL 8.0](https://dev.mysql.com/doc/refman/8.0/en/linux-installation.html), and set it up with a user with username "root" with an empty password.
 
 ```
 sudo mysql -u root
@@ -36,9 +36,9 @@ It will ask you to run in sudo mode in order to execute the sql.
 
 ## How to run it
 
-* Run `mvn clean package` to build an executable
+- Run `mvn clean package` to build an executable
 
-* Execute it with `java -jar -Dspring.profiles.active=local target/db-sanity-check.jar`
+- Execute it with `java -jar -Dspring.profiles.active=local target/db-sanity-check.jar`
 
 ## Project details
 
@@ -48,6 +48,6 @@ If you open the project in an IDE and the build seems to be failing (getters, se
 
 ## Deploy to production
 
-You'll need the [AWS CLI](https://aws.amazon.com/cli/). After you configure your credentials and replace the environment variables in the `cloudformation.yaml`, run in the root
+You'll need the [AWS CLI](https://aws.amazon.com/cli/). After you configure your credentials and replace the environment variables in the `cloudformation.yaml`, run in the aws folder
 
-`aws cloudformation deploy --template-file cloudformation.yaml --stack-name sanity-check`
+`aws cloudformation deploy --template-file cloudformation.yaml --stack-name sanity-check --capabilities CAPABILITY_IAM`
