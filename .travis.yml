@@ -1,7 +1,0 @@
-language: java
-dist: bionic
-jdk:
-  - openjdk8
-script: mvn clean package
-after_success:
-  - mvn clean test jacoco:report coveralls:report
