@@ -36,13 +36,11 @@ It will ask you to run in sudo mode in order to execute the sql.
 
 ## How to run it
 
-- Run `mvn clean package` to build an executable
-
-- Execute it with `java -jar -Dspring.profiles.active=local target/db-sanity-check.jar`
+- `./gradlew bootRun`
 
 ## Project details
 
-This project uses [Maven](https://maven.apache.org/) as the build system. It was built using [Spring Boot](https://spring.io/projects/spring-boot), an awesome framework also for building batches/jobs.
+This project uses [Gradle](https://gradle.org/) as the build system. It was built using [Spring Boot](https://spring.io/projects/spring-boot), an awesome framework also for building batches/jobs.
 
 If you open the project in an IDE and the build seems to be failing (getters, setters, log...), you may need to install [lombok](https://projectlombok.org/).
 
