@@ -23,6 +23,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
 	implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+	implementation 'org.projectlombok:lombok:1.18.20'
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	annotationProcessor 'org.projectlombok:lombok'
@@ -32,6 +33,9 @@ dependencies {
 	implementation group: 'mysql', name: 'mysql-connector-java', version: '8.0.26'
 
 	implementation group: 'org.json', name: 'json', version: '20201115'
+
+	testImplementation "org.testcontainers:junit-jupiter:1.15.3"
+	testImplementation "org.testcontainers:mysql:1.15.3"
 }
 
 test {
