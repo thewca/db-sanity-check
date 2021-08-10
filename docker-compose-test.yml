@@ -1,17 +1,12 @@
 version: '3.1'
 services:
-  #  flyway-wca-test:
-  #    image: flyway/flyway:latest
-  #    command: -configFiles=/flyway/conf/flyway.config -locations=filesystem:/flyway/migration -connectRetries=60 migrate
-  #    volumes:
-  #      - ${PWD}/src/main/resources/db/migration:/flyway/migration
-  #      - ${PWD}/flyway/test/flyway.config:/flyway/conf/flyway.config
-  #    depends_on:
-  #      - wca-test-db
   wca-test-db:
     image: "mysql:8.0.26"
     restart: always
     environment:
       MYSQL_ALLOW_EMPTY_PASSWORD: "true"
+      MYSQL_DATABASE: wca_development
     ports:
       - "8306:3306"
+    volumes:
+      - ${PWD}/src/main/resources/db/migration:/docker-entrypoint-initdb.d/:ro
