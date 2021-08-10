@@ -19,16 +19,19 @@ repositories {
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	implementation 'org.springframework.boot:spring-boot-starter-mail'
-	implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
-	implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa:2.5.3'
+	implementation 'org.springframework.boot:spring-boot-starter-mail:2.5.3'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jdbc:2.5.3'
+	implementation 'org.springframework.boot:spring-boot-starter-jdbc:2.5.3'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test:2.5.3'
+	developmentOnly 'org.springframework.boot:spring-boot-devtools:2.5.3'
 	implementation 'org.projectlombok:lombok:1.18.20'
-	compileOnly 'org.projectlombok:lombok'
-	developmentOnly 'org.springframework.boot:spring-boot-devtools'
-	annotationProcessor 'org.projectlombok:lombok'
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation group: 'junit', name: 'junit', version: '4.13.2'
+	compileOnly 'org.projectlombok:lombok:1.18.20'
+	annotationProcessor 'org.projectlombok:lombok:1.18.20'
+
+	testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.7.2")
+	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.7.2")
+	testRuntimeOnly("org.junit.vintage:junit-vintage-engine:5.7.2")
 
 	implementation group: 'mysql', name: 'mysql-connector-java', version: '8.0.26'
 
@@ -36,7 +39,5 @@ dependencies {
 }
 
 test {
-	useJUnitPlatform() {
-		includeEngines 'junit-jupiter'
-	}
+	useJUnitPlatform()
 }
