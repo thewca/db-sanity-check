@@ -33,11 +33,10 @@ dependencies {
 	implementation group: 'mysql', name: 'mysql-connector-java', version: '8.0.26'
 
 	implementation group: 'org.json', name: 'json', version: '20201115'
-
-	testImplementation "org.testcontainers:junit-jupiter:1.15.3"
-	testImplementation "org.testcontainers:mysql:1.15.3"
 }
 
 test {
-	useJUnitPlatform()
+	useJUnitPlatform() {
+		includeEngines 'junit-jupiter'
+	}
 }
