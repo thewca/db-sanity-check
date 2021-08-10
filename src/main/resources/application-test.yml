@@ -1,0 +1,6 @@
+spring:
+  datasource:
+    driverClassName: com.mysql.cj.jdbc.Driver
+    url: "jdbc:mysql://localhost:8306/wca_development?allowPublicKeyRetrieval=true&useSSL=false"
+    username: root
+    password: root

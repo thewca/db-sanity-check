@@ -38,6 +38,14 @@ It will ask you to run in sudo mode in order to execute the sql.
 
 - `./gradlew bootRun`
 
+## Tests
+
+Tests use docker database to simulate the whole process.
+
+- Start test database with migrations applied
+
+`docker-compose -f docker-compose-test.yml up -d --build`
+
 ## Project details
 
 This project uses [Gradle](https://gradle.org/) as the build system. It was built using [Spring Boot](https://spring.io/projects/spring-boot), an awesome framework also for building batches/jobs.
