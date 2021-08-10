@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.jdbc.Sql;
 import org.worldcubeassociation.dbsanitycheck.integration.AbstractIntegrationTest;
 import org.worldcubeassociation.dbsanitycheck.service.WrtSanityCheckService;
 
@@ -15,7 +16,8 @@ public class WrtSanityCheckServiceTest extends AbstractIntegrationTest {
     private WrtSanityCheckService wrtSanityCheckService;
 
     @Test
-    @DisplayName("Must create batch process")
+    @DisplayName("Must run sanity check")
+    @Sql({"/test-scripts/cleanTestData.sql"})
     public void mustExecute() throws MessagingException {
         wrtSanityCheckService.execute();
     }

@@ -46,6 +46,10 @@ Tests use docker database to simulate the whole process.
 
 `docker-compose -f docker-compose-test.yml up -d --build`
 
+- Run tests
+
+`./gradlew test`
+
 ## Project details
 
 This project uses [Gradle](https://gradle.org/) as the build system. It was built using [Spring Boot](https://spring.io/projects/spring-boot), an awesome framework also for building batches/jobs.
