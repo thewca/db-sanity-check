@@ -3,7 +3,7 @@ spring:
     driverClassName: com.mysql.cj.jdbc.Driver
     url: "jdbc:mysql://localhost:8306/wca_development?allowPublicKeyRetrieval=true&useSSL=false"
     username: root
-    password: root
+    password:
   mail:
     host: smtp.gmail.com
     username: '@mail.username@'

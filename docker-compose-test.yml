@@ -9,11 +9,9 @@ services:
   #    depends_on:
   #      - wca-test-db
   wca-test-db:
-    image: mysql
+    image: "mysql:8.0.26"
     restart: always
     environment:
-      MYSQL_ROOT_USERNAME: root
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: wca_development
+      MYSQL_ALLOW_EMPTY_PASSWORD: "true"
     ports:
       - "8306:3306"
