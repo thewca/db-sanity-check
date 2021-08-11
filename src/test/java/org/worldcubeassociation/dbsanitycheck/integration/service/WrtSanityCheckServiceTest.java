@@ -14,7 +14,6 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.jdbc.Sql;
 import org.worldcubeassociation.dbsanitycheck.integration.AbstractTest;
 import org.worldcubeassociation.dbsanitycheck.service.WrtSanityCheckService;
-import org.worldcubeassociation.dbsanitycheck.util.LoadResourceUtil;
 
 import javax.mail.BodyPart;
 import javax.mail.MessagingException;
@@ -22,8 +21,6 @@ import javax.mail.internet.ContentType;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 import java.io.IOException;
-
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Slf4j
 @SpringBootTest
@@ -46,18 +43,25 @@ public class WrtSanityCheckServiceTest extends AbstractTest {
         wrtSanityCheckService.execute();
 
         MimeMessage[] receivedMessage = greenMail.getReceivedMessages();
-        assertNotNull(receivedMessage);
-
         MimeMultipart mimeMultipart = (MimeMultipart) receivedMessage[0].getContent();
 
         String result = getTextFromMimeMultipart(mimeMultipart);
 
-        String template = LoadResourceUtil.getResource("template/html-wrapper.html");
+        validateHtmlResponse(result);
+    }
 
-        String email = String.format(template, result);
+    @Test
+    @DisplayName("Query with error")
+    @Sql({"/test-scripts/cleanTestData.sql", "/test-scripts/queryWithError.sql"})
+    public void queryWithError() throws MessagingException, IOException {
+        wrtSanityCheckService.execute();
 
-        super.validateHtmlResponse(email);
+        MimeMessage[] receivedMessage = greenMail.getReceivedMessages();
 
+        MimeMultipart mimeMultipart = (MimeMultipart) receivedMessage[0].getContent();
+        String result = getTextFromMimeMultipart(mimeMultipart);
+
+        validateHtmlResponse(result);
     }
 
     private String getTextFromMimeMultipart(MimeMultipart mimeMultipart) throws IOException, MessagingException {
