@@ -5,21 +5,18 @@ spring:
     username: root
     password:
   mail:
-    host: smtp.gmail.com
-    username: '@mail.username@'
-    password: '@mail.password@'
-    port: 587
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
+    password: password
+    username: username
+    host: 127.0.0.1
+    port: 3025
+    protocol: smtp
+    test-connection: true
 
 service:
   mail:
-    send: false
+    send: true
     to: example@email.com
     from: example@email.com
     subject: Test
     logfilepath: log/db-sanity-check.log
+
