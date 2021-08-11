@@ -12,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.jdbc.Sql;
+import org.worldcubeassociation.dbsanitycheck.integration.AbstractTest;
 import org.worldcubeassociation.dbsanitycheck.service.WrtSanityCheckService;
 import org.worldcubeassociation.dbsanitycheck.util.LoadResourceUtil;
 
@@ -28,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @SpringBootTest
 @ActiveProfiles("test")
 @TestPropertySource(locations = "classpath:application-test.yml")
-public class WrtSanityCheckServiceTest {
+public class WrtSanityCheckServiceTest extends AbstractTest {
 
     @Autowired
     private WrtSanityCheckService wrtSanityCheckService;
@@ -49,12 +50,13 @@ public class WrtSanityCheckServiceTest {
 
         MimeMultipart mimeMultipart = (MimeMultipart) receivedMessage[0].getContent();
 
-
         String result = getTextFromMimeMultipart(mimeMultipart);
 
-        String template = LoadResourceUtil.getResource("template/template.html");
+        String template = LoadResourceUtil.getResource("template/html-wrapper.html");
 
         String email = String.format(template, result);
+
+        super.validateHtmlResponse(email);
 
     }
 

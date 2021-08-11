@@ -36,8 +36,10 @@ dependencies {
 	implementation group: 'mysql', name: 'mysql-connector-java', version: '8.0.26'
 
 	implementation group: 'org.json', name: 'json', version: '20201115'
+	implementation 'com.google.guava:guava:30.1.1-jre'
+	implementation 'commons-io:commons-io:2.8.0'
 
-	testImplementation 'com.icegreen:greenmail-junit5:1.6.1'
+	testImplementation 'com.icegreen:greenmail-junit5:1.6.4'
 }
 
 test {
