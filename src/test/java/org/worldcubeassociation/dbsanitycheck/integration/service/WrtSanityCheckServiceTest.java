@@ -31,9 +31,12 @@ public class WrtSanityCheckServiceTest extends AbstractTest {
     @Autowired
     private WrtSanityCheckService wrtSanityCheckService;
 
+    private static final String USERNAME = "username";
+    private static final String PASSWORD = "password";
+
     @RegisterExtension
     static GreenMailExtension greenMail = new GreenMailExtension(ServerSetupTest.SMTP)
-            .withConfiguration(GreenMailConfiguration.aConfig().withUser("username", "password"))
+            .withConfiguration(GreenMailConfiguration.aConfig().withUser(USERNAME, PASSWORD))
             .withPerMethodLifecycle(false);
 
     @Test
@@ -42,10 +45,7 @@ public class WrtSanityCheckServiceTest extends AbstractTest {
     public void regularWorkflow() throws MessagingException, IOException {
         wrtSanityCheckService.execute();
 
-        MimeMessage[] receivedMessage = greenMail.getReceivedMessages();
-        MimeMultipart mimeMultipart = (MimeMultipart) receivedMessage[0].getContent();
-
-        String result = getTextFromMimeMultipart(mimeMultipart);
+        String result = getEmailResult();
 
         validateHtmlResponse(result);
     }
@@ -56,12 +56,19 @@ public class WrtSanityCheckServiceTest extends AbstractTest {
     public void queryWithError() throws MessagingException, IOException {
         wrtSanityCheckService.execute();
 
-        MimeMessage[] receivedMessage = greenMail.getReceivedMessages();
-
-        MimeMultipart mimeMultipart = (MimeMultipart) receivedMessage[0].getContent();
-        String result = getTextFromMimeMultipart(mimeMultipart);
+        String result = getEmailResult();
 
         validateHtmlResponse(result);
+    }
+
+    private String getEmailResult() throws MessagingException, IOException {
+        MimeMessage[] receivedMessages = greenMail.getReceivedMessages();
+
+        // Email content is just the first email of the current run
+        MimeMultipart mimeMultipart = (MimeMultipart) receivedMessages[0].getContent();
+
+        return getTextFromMimeMultipart(mimeMultipart);
+
     }
 
     private String getTextFromMimeMultipart(MimeMultipart mimeMultipart) throws IOException, MessagingException {

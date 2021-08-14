@@ -9,14 +9,35 @@
 
 <h2>Sanity Check Results</h2>
 
-<h4>No inconsistencies found.</h4>
+<h4>Found inconsistencies in 1 topics.</h4>
 
-<h4>Found errors in 1 queries.</h4>
-
-<p>1. [Person Data Irregularities] Query with error</p>
-<code>CELECT * FROM Persons WHERE name REGEXP '[0-9]'</code>
-<p><b>Reason:</b> StatementCallback; bad SQL grammar [CELECT * FROM Persons WHERE name REGEXP '[0-9]']; nested exception is java.sql.SQLSyntaxErrorException: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'CELECT * FROM Persons WHERE name REGEXP '[0-9]'' at line 1</p>
+<h3>1. [Person Data Irregularities] Names with numbers</h3>
+<div style="overflow-x: auto;">
+ <table style="border: 1px solid black;">
+  <thead>
+   <tr style="background-color: #f2f2f2;"><th scope="col" style="border: 1px solid black;">subId</th><th scope="col" style="border: 1px solid black;">comments</th><th scope="col" style="border: 1px solid black;">gender</th><th scope="col" style="border: 1px solid black;">month</th><th scope="col" style="border: 1px solid black;">year</th><th scope="col" style="border: 1px solid black;">name</th><th scope="col" style="border: 1px solid black;">incorrect_wca_id_claim_count</th><th scope="col" style="border: 1px solid black;">id</th><th scope="col" style="border: 1px solid black;">day</th><th scope="col" style="border: 1px solid black;">countryId</th><th scope="col" style="border: 1px solid black;">rails_id</th>
+   </tr>
+  </thead>
+  <tbody>
+   <tr>
+    <td style="border: 1px solid black;">2</td>
+    <td style="border: 1px solid black;"></td>
+    <td style="border: 1px solid black;">f</td>
+    <td style="border: 1px solid black;">12</td>
+    <td style="border: 1px solid black;">1954</td>
+    <td style="border: 1px solid black;">Dottie Marsh 2</td>
+    <td style="border: 1px solid black;">0</td>
+    <td style="border: 1px solid black;">1982FRID01</td>
+    <td style="border: 1px solid black;">4</td>
+    <td style="border: 1px solid black;">Czech Republic</td>
+    <td style="border: 1px solid black;">5</td>
+   </tr>
+  </tbody>
+ </table>
+</div>
 <br>
+
+<h4>There is no query with SQL errors.</h4>
 
 
 

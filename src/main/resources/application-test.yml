@@ -19,4 +19,3 @@ service:
     from: example@email.com
     subject: Test
     logfilepath: log/db-sanity-check.log
-

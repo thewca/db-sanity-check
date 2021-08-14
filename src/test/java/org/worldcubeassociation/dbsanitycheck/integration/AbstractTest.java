@@ -17,13 +17,13 @@ public abstract class AbstractTest {
 
     public static void validateHtmlResponse(String actualHtmlContent) {
 
-        String htmlWrapper = LoadResourceUtil.getResource("template/html-wrapper.html");
-        String actualHtmlWrappedContent = String.format(htmlWrapper, actualHtmlContent);
-
         StackWalker walker = StackWalker.getInstance();
         StackWalker.StackFrame stackFrameOptional = walker.walk(stream -> stream
                 .filter(f -> f.getClassName().contains("org.worldcubeassociation.dbsanitycheck.integration.service"))
                 .findFirst()).orElseThrow(() -> new RuntimeException("Cant find test StackFrame"));
+
+        String htmlWrapper = LoadResourceUtil.getResource("template/html-wrapper.html");
+        String actualHtmlWrappedContent = String.format(htmlWrapper, actualHtmlContent);
 
         final String methodName = stackFrameOptional.getMethodName();
         final String fullClassName = stackFrameOptional.getClassName();
