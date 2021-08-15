@@ -23,6 +23,7 @@ import java.io.IOException;
 @SpringBootTest
 @ActiveProfiles("test")
 @TestPropertySource(locations = "classpath:application-test.yml")
+@Sql({"/test-scripts/cleanTestData.sql", "/test-scripts/regularWorkflow.sql"})
 public class WrtSanityCheckServiceTest extends AbstractTest {
 
     @Autowired
@@ -42,7 +43,6 @@ public class WrtSanityCheckServiceTest extends AbstractTest {
 
     @Test
     @DisplayName("Must run sanity check")
-    @Sql({"/test-scripts/cleanTestData.sql", "/test-scripts/regularWorkflow.sql"})
     public void regularWorkflow() throws MessagingException, IOException {
         wrtSanityCheckService.execute();
 
