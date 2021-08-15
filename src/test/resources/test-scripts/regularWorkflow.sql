@@ -3,6 +3,7 @@ insert into sanity_check_categories (id, name) values (1, 'Person Data Irregular
 
 -- Insert sanity check
 insert into sanity_checks (id, sanity_check_category_id, topic, query) values (1, 1, 'Names with numbers', 'SELECT * FROM Persons WHERE name REGEXP \'[0-9]\'');
+insert into sanity_checks (id, sanity_check_category_id, topic, query) values (2, 1, 'Query with error', 'CELECT * FROM Persons WHERE name REGEXP \'[0-9]\'');
 
 -- Insert competitors. There's one competitor with number, Fridrich 2
 INSERT INTO wca_development.Persons (id, subId, name, countryId, gender, `year`, `month`, `day`, comments, rails_id, incorrect_wca_id_claim_count) VALUES('1982BORS01', 1, 'Elsie-May Talbot', 'Serbia', 'm', 1954, 12, 4, '', 1, 0);

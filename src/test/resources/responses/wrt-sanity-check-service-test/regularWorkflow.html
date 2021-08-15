@@ -37,7 +37,12 @@
 </div>
 <br>
 
-<h4>There is no query with SQL errors.</h4>
+<h4>Found errors in 1 queries.</h4>
+
+<p>1. [Person Data Irregularities] Query with error</p>
+<code>CELECT * FROM Persons WHERE name REGEXP '[0-9]'</code>
+<p><b>Reason:</b> StatementCallback; bad SQL grammar [CELECT * FROM Persons WHERE name REGEXP '[0-9]']; nested exception is java.sql.SQLSyntaxErrorException: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'CELECT * FROM Persons WHERE name REGEXP '[0-9]'' at line 1</p>
+<br>
 
 
 
