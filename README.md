@@ -2,7 +2,7 @@
 
 The database is very large and we need to run verifications periodically. Instead of running a set of queries manually against a database, this batch runs it and sends the report to the WRT monthly.
 
-[![Build Status](https://travis-ci.org/thewca/db-sanity-check.svg?branch=main)](https://travis-ci.org/github/thewca/db-sanity-check) [![Coverage Status](https://coveralls.io/repos/github/thewca/db-sanity-check/badge.svg?branch=main)](https://coveralls.io/github/thewca/db-sanity-check?branch=main)
+[![Gradle CI](https://github.com/thewca/db-sanity-check/actions/workflows/gradlew.yml/badge.svg)](https://github.com/thewca/db-sanity-check/actions/workflows/gradlew.yml)
 
 ## Setup local database
 
