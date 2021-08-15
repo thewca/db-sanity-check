@@ -20,5 +20,18 @@ jobs:
           distribution: "adopt"
       - name: Validate Gradle wrapper
         uses: gradle/wrapper-validation-action@e6e38bacfdf1a337459f332974bb2327a31aaf4b
+      - name: Start containers for tests
+        run: docker-compose -f docker-compose-test.yml up -d
+      - name: Display containers
+        run: docker-compose -f docker-compose-test.yml ps
+      - name: Wait for database to start
+        run: |
+          for i in `seq 1 10`;
+          do
+            nc -z localhost 8306 && echo Success && exit 0
+            echo -n .
+            sleep 1
+          done
+          echo Failed waiting for mysql && exit 1
       - name: Build and test
         run: ./gradlew build
