@@ -2,6 +2,7 @@ package org.worldcubeassociation.dbsanitycheck.integration.service;
 
 import com.icegreen.greenmail.configuration.GreenMailConfiguration;
 import com.icegreen.greenmail.junit5.GreenMailExtension;
+import com.icegreen.greenmail.store.Store;
 import com.icegreen.greenmail.util.ServerSetupTest;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
@@ -33,11 +34,11 @@ public class WrtSanityCheckServiceTest extends AbstractTest {
 
     private static final String USERNAME = "username";
     private static final String PASSWORD = "password";
+    private static final String EMAIL = "email@wca.com";
 
     @RegisterExtension
     static GreenMailExtension greenMail = new GreenMailExtension(ServerSetupTest.SMTP)
-            .withConfiguration(GreenMailConfiguration.aConfig().withUser(USERNAME, PASSWORD))
-            .withPerMethodLifecycle(false);
+            .withConfiguration(GreenMailConfiguration.aConfig().withUser(EMAIL, USERNAME, PASSWORD)).withPerMethodLifecycle(false);
 
     @Test
     @DisplayName("Must run sanity check")

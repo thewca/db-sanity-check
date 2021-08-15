@@ -10,12 +10,12 @@ spring:
     host: 127.0.0.1
     port: 3025
     protocol: smtp
-    test-connection: true
+    test-connection: false
 
 service:
   mail:
     send: true
-    to: example@email.com
-    from: example@email.com
+    to: email@wca.com
+    from: email@wca.com
     subject: Test
     logfilepath: log/db-sanity-check.log
