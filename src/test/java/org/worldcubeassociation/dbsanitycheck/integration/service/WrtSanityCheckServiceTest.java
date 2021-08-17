@@ -23,8 +23,7 @@ import javax.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.util.List;
 
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @Slf4j
 @SpringBootTest
@@ -58,19 +57,8 @@ public class WrtSanityCheckServiceTest extends AbstractTest {
         validateHtmlResponse(result);
     }
 
-    @Test
-    @DisplayName("Must send empty email due exclusion")
-    @Sql({"/test-scripts/cleanTestData.sql", "/test-scripts/exclusion.sql"})
-    public void exclusion() throws MessagingException, IOException {
-        wrtSanityCheckService.execute();
-
-        String result = getEmailResult();
-
-        validateHtmlResponse(result);
-    }
-
     private String getEmailResult() throws MessagingException, IOException {
-        verify(emailSender).send(messageCaptor.capture());
+        verify(emailSender, times(1)).send(messageCaptor.capture());
 
         List<MimeMessage> messages = messageCaptor.getAllValues();
 
