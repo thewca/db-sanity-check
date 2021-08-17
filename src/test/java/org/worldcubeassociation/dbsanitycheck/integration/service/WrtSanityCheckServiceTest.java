@@ -22,8 +22,7 @@ import java.io.IOException;
 @Slf4j
 @SpringBootTest
 @ActiveProfiles("test")
-@TestPropertySource(locations = "classpath:application-test.yml")
-@Sql({"/test-scripts/cleanTestData.sql", "/test-scripts/regularWorkflow.sql"})
+@TestPropertySource(locations = "classpath:application-test.properties")
 public class WrtSanityCheckServiceTest extends AbstractTest {
 
     @Autowired
@@ -37,13 +36,21 @@ public class WrtSanityCheckServiceTest extends AbstractTest {
     static GreenMailExtension greenMail = new GreenMailExtension(ServerSetupTest.SMTP)
             .withConfiguration(GreenMailConfiguration.aConfig().withUser(EMAIL, USERNAME, PASSWORD)).withPerMethodLifecycle(false);
 
-    // Creating another test case messes with the green mail server. It 'remembers' last email.
-    // Fails on the first execution, succeeds on the second
-    // Also, between test cases, it can mix the files
-
     @Test
     @DisplayName("Must run sanity check")
+    @Sql({"/test-scripts/cleanTestData.sql", "/test-scripts/regularWorkflow.sql"})
     public void regularWorkflow() throws MessagingException, IOException {
+        wrtSanityCheckService.execute();
+
+        String result = GreenMailUtil.getEmailResult(greenMail);
+
+        validateHtmlResponse(result);
+    }
+
+    @Test
+    @DisplayName("Exclusion")
+    @Sql({"/test-scripts/cleanTestData.sql", "/test-scripts/exclusion.sql"})
+    public void exclusion() throws MessagingException, IOException {
         wrtSanityCheckService.execute();
 
         String result = GreenMailUtil.getEmailResult(greenMail);
