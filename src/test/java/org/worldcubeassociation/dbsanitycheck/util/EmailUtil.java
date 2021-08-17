@@ -1,26 +1,21 @@
 package org.worldcubeassociation.dbsanitycheck.util;
 
-import com.icegreen.greenmail.junit5.GreenMailExtension;
-
 import javax.mail.BodyPart;
 import javax.mail.MessagingException;
 import javax.mail.internet.ContentType;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 import java.io.IOException;
+import java.util.List;
 
-public final class GreenMailUtil {
-    private GreenMailUtil() {
+public final class EmailUtil {
+    private EmailUtil() {
     }
 
-    public static String getEmailResult(GreenMailExtension greenMail) throws MessagingException, IOException {
-        MimeMessage[] receivedMessages = greenMail.getReceivedMessages();
-
+    public static String getEmailResult(List<MimeMessage> receivedMessages) throws MessagingException, IOException {
         // Email content is just the first email of the current run
-        MimeMultipart mimeMultipart = (MimeMultipart) receivedMessages[0].getContent();
-
+        MimeMultipart mimeMultipart = (MimeMultipart) receivedMessages.get(0).getContent();
         return getTextFromMimeMultipart(mimeMultipart);
-
     }
 
     private static String getTextFromMimeMultipart(MimeMultipart mimeMultipart) throws IOException, MessagingException {
@@ -45,13 +40,13 @@ public final class GreenMailUtil {
             BodyPart bodyPart) throws IOException, MessagingException {
 
         String result = "";
-        if (bodyPart.isMimeType("text/plain")) {
+        if (bodyPart.getContent() instanceof MimeMultipart) {
+            result = getTextFromMimeMultipart((MimeMultipart) bodyPart.getContent());
+        } else if (bodyPart.isMimeType("text/plain")) {
             result = (String) bodyPart.getContent();
         } else if (bodyPart.isMimeType("text/html")) {
             String html = (String) bodyPart.getContent();
             result = html;
-        } else if (bodyPart.getContent() instanceof MimeMultipart) {
-            result = getTextFromMimeMultipart((MimeMultipart) bodyPart.getContent());
         }
         return result;
     }
