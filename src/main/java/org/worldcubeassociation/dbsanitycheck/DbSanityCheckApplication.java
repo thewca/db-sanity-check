@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.worldcubeassociation.dbsanitycheck.service.WrtSanityCheckService;
 
 @Slf4j
@@ -15,9 +14,6 @@ public class DbSanityCheckApplication implements CommandLineRunner {
     @Autowired
     private WrtSanityCheckService wrtSanityCheckService;
 
-    @Autowired
-    private ConfigurableApplicationContext context;
-
     public static void main(String[] args) {
         SpringApplication.run(DbSanityCheckApplication.class, args);
     }
@@ -26,5 +22,4 @@ public class DbSanityCheckApplication implements CommandLineRunner {
     public void run(String... args) throws Exception {
         wrtSanityCheckService.execute();
     }
-
 }
