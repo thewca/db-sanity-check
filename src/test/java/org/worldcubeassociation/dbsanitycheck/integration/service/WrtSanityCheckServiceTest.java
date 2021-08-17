@@ -46,15 +46,4 @@ public class WrtSanityCheckServiceTest extends AbstractTest {
 
         validateHtmlResponse(result);
     }
-
-    @Test
-    @DisplayName("Exclusion")
-    @Sql({"/test-scripts/cleanTestData.sql", "/test-scripts/exclusion.sql"})
-    public void exclusion() throws MessagingException, IOException {
-        wrtSanityCheckService.execute();
-
-        String result = GreenMailUtil.getEmailResult(greenMail);
-
-        validateHtmlResponse(result);
-    }
 }
