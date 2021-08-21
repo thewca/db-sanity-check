@@ -2,7 +2,7 @@
 
 The database is very large and we need to run verifications periodically. Instead of running a set of queries manually against a database, this batch runs it and sends the report to the WRT monthly.
 
-[![Build Status](https://travis-ci.org/thewca/db-sanity-check.svg?branch=main)](https://travis-ci.org/github/thewca/db-sanity-check) [![Coverage Status](https://coveralls.io/repos/github/thewca/db-sanity-check/badge.svg?branch=main)](https://coveralls.io/github/thewca/db-sanity-check?branch=main)
+[![Gradle CI](https://github.com/thewca/db-sanity-check/actions/workflows/gradlew.yml/badge.svg)](https://github.com/thewca/db-sanity-check/actions/workflows/gradlew.yml)
 
 ## Setup local database
 
@@ -36,13 +36,23 @@ It will ask you to run in sudo mode in order to execute the sql.
 
 ## How to run it
 
-- Run `mvn clean package` to build an executable
+- `./gradlew bootRun`
 
-- Execute it with `java -jar -Dspring.profiles.active=local target/db-sanity-check.jar`
+## Tests
+
+Tests use docker database to simulate the whole process.
+
+- Start test database with migrations applied
+
+`docker-compose -f docker-compose-test.yml up -d --build`
+
+- Run tests
+
+`./gradlew test`
 
 ## Project details
 
-This project uses [Maven](https://maven.apache.org/) as the build system. It was built using [Spring Boot](https://spring.io/projects/spring-boot), an awesome framework also for building batches/jobs.
+This project uses [Gradle](https://gradle.org/) as the build system. It was built using [Spring Boot](https://spring.io/projects/spring-boot), an awesome framework also for building batches/jobs.
 
 If you open the project in an IDE and the build seems to be failing (getters, setters, log...), you may need to install [lombok](https://projectlombok.org/).
 
