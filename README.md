@@ -2,7 +2,7 @@
 
 The database is very large and we need to run verifications periodically. Instead of running a set of queries manually against a database, this batch runs it and sends the report to the WRT monthly.
 
-[![Gradle CI](https://github.com/thewca/db-sanity-check/actions/workflows/gradlew.yml/badge.svg)](https://github.com/thewca/db-sanity-check/actions/workflows/gradlew.yml)
+[![Build](https://github.com/thewca/db-sanity-check/actions/workflows/build.yml/badge.svg)](https://github.com/thewca/db-sanity-check/actions/workflows/build.yml)
 
 ## Setup local database
 
