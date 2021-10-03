@@ -2,7 +2,7 @@
 
 The database is very large and we need to run verifications periodically. Instead of running a set of queries manually against a database, this batch runs it and sends the report to the WRT monthly.
 
-[![Gradle CI](https://github.com/thewca/db-sanity-check/actions/workflows/gradlew.yml/badge.svg)](https://github.com/thewca/db-sanity-check/actions/workflows/gradlew.yml)
+[![Build](https://github.com/thewca/db-sanity-check/actions/workflows/build.yml/badge.svg)](https://github.com/thewca/db-sanity-check/actions/workflows/build.yml)
 
 ## Setup local database
 
@@ -58,6 +58,17 @@ If you open the project in an IDE and the build seems to be failing (getters, se
 
 ## Deploy to production
 
-You'll need the [AWS CLI](https://aws.amazon.com/cli/). After you configure your credentials and replace the environment variables in the `cloudformation.yaml`, run in the aws folder
+You'll need the [AWS CLI](https://aws.amazon.com/cli/). 
+
+- Build a jar
+`./gradlew build`
+
+- Build a docker image
+`docker build -t thewca/db-sanity-check .`
+
+- Push the image
+`docker push thewca/db-sanity-check`
+
+- Replace the environment variables in the `cloudformation.yaml`, run in the aws folder
 
 `aws cloudformation deploy --template-file cloudformation.yaml --stack-name sanity-check --capabilities CAPABILITY_IAM`
