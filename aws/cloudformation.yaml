@@ -35,7 +35,7 @@ Resources:
     Properties:
       ContainerProperties:
         Vcpus: 1
-        Image: campos20/db-sanity-check
+        Image: thewca/db-sanity-check
         Memory: 2048
         Environment:
           - Name: "service.mail.send"
