@@ -1,12 +1,12 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: "Sanity check environment"
 Resources:
-  SanityCheck:
+  SanityCheckEnv:
     Type: AWS::Batch::ComputeEnvironment
     Properties:
       Type: MANAGED
       ServiceRole: arn:aws:iam::${env:ACCOUNT_ID}:role/BatchRole
-      ComputeEnvironmentName: SanityCheck
+      ComputeEnvironmentName: SanityCheckEnv
       ComputeResources:
         MinvCpus: 0
         MaxvCpus: 4
