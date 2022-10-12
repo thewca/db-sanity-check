@@ -1,2 +1,5 @@
 *.tfvars
 .terraform/
+
+# This will prevent accidental leaks
+main.tf
