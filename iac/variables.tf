@@ -3,3 +3,7 @@ variable "aws_region" {
   default     = "us-west-2"
 }
 
+variable "availability_zone" {
+  description = "Default availability zone"
+  default     = "us-west-2a"
+}
