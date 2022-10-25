@@ -60,8 +60,7 @@ public class EmailServiceImpl implements EmailService {
             MimeMessageHelper helper = new MimeMessageHelper(message, MULTIPART);
 
             helper.setFrom(mailFrom);
-            helper.setTo(InternetAddress.parse(mailTo));
-            helper.setReplyTo(mailTo);
+            handleRecipients(helper);
             LocalDate currentDate = LocalDate.now();
             String formattedSubject = subject + " - " + currentDate.getMonth() + " " + currentDate.getYear();
             helper.setSubject(formattedSubject);
@@ -91,6 +90,16 @@ public class EmailServiceImpl implements EmailService {
             log.info("Not sending email");
         }
 
+    }
+
+    private void handleRecipients(MimeMessageHelper helper) throws MessagingException {
+        var mailSplit = List.of(mailTo.split(","));
+        helper.setTo(InternetAddress.parse(mailTo));
+        helper.setReplyTo(mailSplit.get(0));
+        if (mailSplit.size() > 1) {
+            helper.setCc(InternetAddress.parse(
+                    String.join(",", mailSplit.subList(1, mailSplit.size()))));
+        }
     }
 
     private String getText(List<AnalysisBean> analysisResult, List<SanityCheckWithErrorBean> queriesWithError) {
