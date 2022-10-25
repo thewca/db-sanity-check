@@ -61,6 +61,7 @@ public class EmailServiceImpl implements EmailService {
 
             helper.setFrom(mailFrom);
             helper.setTo(InternetAddress.parse(mailTo));
+            helper.setReplyTo(mailTo);
             LocalDate currentDate = LocalDate.now();
             String formattedSubject = subject + " - " + currentDate.getMonth() + " " + currentDate.getYear();
             helper.setSubject(formattedSubject);
