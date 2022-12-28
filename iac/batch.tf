@@ -47,6 +47,40 @@ resource "aws_batch_job_definition" "sanity_check_cron_job_definition" {
       "value": "prod"
     }
   ],
+  "secrets": [
+    {
+      "name": "spring.datasource.url",
+      "valueFrom": "arn:aws:secretsmanager:"
+    },
+    {
+      "name": "spring.datasource.username",
+      "valueFrom": "arn:aws:secretsmanager:"
+    },
+    {
+      "name": "spring.datasource.password",
+      "valueFrom": "arn:aws:secretsmanager:"
+    },
+    {
+      "name": "Spring.mail.host",
+      "valueFrom": "arn:aws:secretsmanager:"
+    },
+    {
+      "name": "Spring.mail.authentication",
+      "valueFrom": "arn:aws:secretsmanager:"
+    },
+    {
+      "name": "spring.mail.username",
+      "valueFrom": "arn:aws:secretsmanager:"
+    },
+    {
+      "name": "Spring.mail.password",
+      "valueFrom": "arn:aws:secretsmanager:"
+    },
+    {
+      "name": "service.mail.from",
+      "valueFrom": "arn:aws:secretsmanager:"
+    }
+  ],
   "fargatePlatformConfiguration": {
     "platformVersion": "LATEST"
   },
@@ -111,4 +145,13 @@ resource "aws_batch_compute_environment" "sanity_check_cron_compute_environment"
   }
 
   depends_on = [aws_iam_role_policy_attachment.sanity_check_cron_service_role]
+}
+
+resource "aws_batch_job_queue" "sanity_check_cron_job_queue" {
+  name     = "sanity-check-cron-job-queue${local.env_suffix}"
+  state    = "ENABLED"
+  priority = 1
+  compute_environments = [
+    aws_batch_compute_environment.sanity_check_cron_compute_environment.arn
+  ]
 }
