@@ -22,7 +22,7 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_role" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-resource "aws_batch_job_definition" "statistics_cron_job_definition" {
+resource "aws_batch_job_definition" "sanity_check_cron_job_definition" {
   name = "sanity-check-job-definition${local.env_suffix}"
   type = "container"
   platform_capabilities = [
@@ -32,7 +32,7 @@ resource "aws_batch_job_definition" "statistics_cron_job_definition" {
   container_properties = <<CONTAINER_PROPERTIES
 {
   "command": [],
-  "image": "thewca/statistics-cron",
+  "image": "thewca/db-sanity-check",
   "environment": [
     {
       "name": "service.mail.send",
@@ -66,4 +66,49 @@ resource "aws_batch_job_definition" "statistics_cron_job_definition" {
   "executionRoleArn": "${aws_iam_role.sanity_check_execution_role.arn}"
 }
 CONTAINER_PROPERTIES
+}
+
+resource "aws_iam_role" "sanity_check_cron_service_role" {
+  name = "sanity-check-cron-service-role${local.env_suffix}"
+
+  assume_role_policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+    {
+        "Action": "sts:AssumeRole",
+        "Effect": "Allow",
+        "Principal": {
+        "Service": "batch.amazonaws.com"
+        }
+    }
+    ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy_attachment" "sanity_check_cron_service_role" {
+  role       = aws_iam_role.sanity_check_cron_service_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"
+}
+
+resource "aws_batch_compute_environment" "sanity_check_cron_compute_environment" {
+  type                     = "MANAGED"
+  compute_environment_name = "sanity-check-cron-compute-environment${local.env_suffix}"
+  state                    = "ENABLED"
+  service_role             = aws_iam_role.sanity_check_cron_service_role.arn
+
+  compute_resources {
+    max_vcpus = 1
+
+    security_group_ids = [
+      aws_security_group.sanity_check_sg.id
+    ]
+
+    subnets = [aws_default_subnet.default_az1.id]
+
+    type = "FARGATE"
+  }
+
+  depends_on = [aws_iam_role_policy_attachment.sanity_check_cron_service_role]
 }

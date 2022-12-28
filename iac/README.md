@@ -21,7 +21,7 @@ cd iac
 terraform init
 ```
 
-- Select the workspace
+- Select the workspace (you can also use workspace prod)
 
 ```bash
 terraform workspace select staging || terraform workspace new staging
