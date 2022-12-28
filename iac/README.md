@@ -24,7 +24,7 @@ terraform init
 - Select the workspace
 
 ```bash
-terraform workspace select prod || terraform workspace new prod
+terraform workspace select staging || terraform workspace new staging
 ```
 
 - Run the plan
