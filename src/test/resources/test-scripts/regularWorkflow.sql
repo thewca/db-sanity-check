@@ -14,11 +14,7 @@ values
         1,
         'Names with numbers',
         'SELECT * FROM Persons WHERE name REGEXP \'[0-9]\''
-    );
-
-insert into
-    sanity_checks (id, sanity_check_category_id, topic, query)
-values
+    ),
     (
         2,
         1,
@@ -27,7 +23,7 @@ values
     );
 
 -- Insert competitors. There's one competitor with number
-INSERT INTO
+insert into
     wca_development.Persons (
         id,
         subId,
@@ -41,7 +37,7 @@ INSERT INTO
         rails_id,
         incorrect_wca_id_claim_count
     )
-VALUES
+values
 (
         '1982BORS01',
         1,
@@ -54,23 +50,7 @@ VALUES
         '',
         1,
         0
-    );
-
-INSERT INTO
-    wca_development.Persons (
-        id,
-        subId,
-        name,
-        countryId,
-        gender,
-        `year`,
-        `month`,
-        `day`,
-        comments,
-        rails_id,
-        incorrect_wca_id_claim_count
-    )
-VALUES
+    ),
 (
         '1982BRIN01',
         1,
@@ -83,23 +63,7 @@ VALUES
         '',
         2,
         0
-    );
-
-INSERT INTO
-    wca_development.Persons (
-        id,
-        subId,
-        name,
-        countryId,
-        gender,
-        `year`,
-        `month`,
-        `day`,
-        comments,
-        rails_id,
-        incorrect_wca_id_claim_count
-    )
-VALUES
+    ),
 (
         '1982CHIL01',
         1,
@@ -112,23 +76,7 @@ VALUES
         '',
         3,
         0
-    );
-
-INSERT INTO
-    wca_development.Persons (
-        id,
-        subId,
-        name,
-        countryId,
-        gender,
-        `year`,
-        `month`,
-        `day`,
-        comments,
-        rails_id,
-        incorrect_wca_id_claim_count
-    )
-VALUES
+    ),
 (
         '1982FRID01',
         1,
@@ -141,23 +89,7 @@ VALUES
         '',
         4,
         0
-    );
-
-INSERT INTO
-    wca_development.Persons (
-        id,
-        subId,
-        name,
-        countryId,
-        gender,
-        `year`,
-        `month`,
-        `day`,
-        comments,
-        rails_id,
-        incorrect_wca_id_claim_count
-    )
-VALUES
+    ),
 (
         '1982FRID01',
         2,
@@ -170,23 +102,7 @@ VALUES
         '',
         5,
         0
-    );
-
-INSERT INTO
-    wca_development.Persons (
-        id,
-        subId,
-        name,
-        countryId,
-        gender,
-        `year`,
-        `month`,
-        `day`,
-        comments,
-        rails_id,
-        incorrect_wca_id_claim_count
-    )
-VALUES
+    ),
 (
         '1982GALR01',
         1,
@@ -199,23 +115,7 @@ VALUES
         '',
         6,
         0
-    );
-
-INSERT INTO
-    wca_development.Persons (
-        id,
-        subId,
-        name,
-        countryId,
-        gender,
-        `year`,
-        `month`,
-        `day`,
-        comments,
-        rails_id,
-        incorrect_wca_id_claim_count
-    )
-VALUES
+    ),
 (
         '1982JEAN01',
         1,
@@ -228,23 +128,7 @@ VALUES
         '',
         7,
         0
-    );
-
-INSERT INTO
-    wca_development.Persons (
-        id,
-        subId,
-        name,
-        countryId,
-        gender,
-        `year`,
-        `month`,
-        `day`,
-        comments,
-        rails_id,
-        incorrect_wca_id_claim_count
-    )
-VALUES
+    ),
 (
         '1982LABA01',
         1,
@@ -257,23 +141,7 @@ VALUES
         '',
         8,
         0
-    );
-
-INSERT INTO
-    wca_development.Persons (
-        id,
-        subId,
-        name,
-        countryId,
-        gender,
-        `year`,
-        `month`,
-        `day`,
-        comments,
-        rails_id,
-        incorrect_wca_id_claim_count
-    )
-VALUES
+    ),
 (
         '1982LAET01',
         1,
@@ -286,23 +154,7 @@ VALUES
         '',
         9,
         0
-    );
-
-INSERT INTO
-    wca_development.Persons (
-        id,
-        subId,
-        name,
-        countryId,
-        gender,
-        `year`,
-        `month`,
-        `day`,
-        comments,
-        rails_id,
-        incorrect_wca_id_claim_count
-    )
-VALUES
+    ),
 (
         '1982PETR01',
         1,
