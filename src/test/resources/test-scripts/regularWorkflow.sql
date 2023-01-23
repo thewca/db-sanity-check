@@ -3,7 +3,8 @@ insert into
     sanity_check_categories (id, name)
 values
     (1, 'Person Data Irregularities'),
-    (2, 'Irregular Results');
+    (2, 'Irregular Results'),
+    (3, 'User Data Irregularities');
 
 -- Insert sanity check
 insert into
@@ -20,6 +21,12 @@ values
         1,
         'Query with error',
         'CELECT * FROM Persons WHERE name REGEXP \'[0-9]\''
+    ),
+    (
+        3,
+        3,
+        'Inconsistent name in users table',
+        'SELECT p.id, p.name as profile_name, u.name as account_name FROM Persons p INNER JOIN users u ON p.id=u.wca_id AND p.name<>u.name AND p.subId=1'
     );
 
 -- Insert competitors. There's one competitor with number
@@ -38,7 +45,7 @@ insert into
         incorrect_wca_id_claim_count
     )
 values
-(
+    (
         '1982BORS01',
         1,
         'Elsie-May Talbot',
@@ -51,7 +58,7 @@ values
         1,
         0
     ),
-(
+    (
         '1982BRIN01',
         1,
         'Gianni Lozano',
@@ -64,7 +71,7 @@ values
         2,
         0
     ),
-(
+    (
         '1982CHIL01',
         1,
         'Saif Chandler',
@@ -77,7 +84,7 @@ values
         3,
         0
     ),
-(
+    (
         '1982FRID01',
         1,
         'Dottie Marsh',
@@ -90,7 +97,7 @@ values
         4,
         0
     ),
-(
+    (
         '1982FRID01',
         2,
         'Dottie Marsh 2',
@@ -103,7 +110,7 @@ values
         5,
         0
     ),
-(
+    (
         '1982GALR01',
         1,
         'Colleen Scott',
@@ -116,7 +123,7 @@ values
         6,
         0
     ),
-(
+    (
         '1982JEAN01',
         1,
         'Ellie-Mai Swift',
@@ -129,7 +136,7 @@ values
         7,
         0
     ),
-(
+    (
         '1982LABA01',
         1,
         'Lilli Sims',
@@ -142,7 +149,7 @@ values
         8,
         0
     ),
-(
+    (
         '1982LAET01',
         1,
         'Ignacy Snider',
@@ -155,7 +162,7 @@ values
         9,
         0
     ),
-(
+    (
         '1982PETR01',
         1,
         'Lola-Rose Nelson',
@@ -170,3 +177,51 @@ values
     );
 
 -- names from https://www.name-generator.org.uk/quick/
+INSERT INTO
+    wca_development.users (
+        id,
+        email,
+        encrypted_password,
+        sign_in_count,
+        current_sign_in_at,
+        last_sign_in_at,
+        confirmed_at,
+        created_at,
+        updated_at,
+        name,
+        region,
+        wca_id,
+        avatar,
+        dob,
+        gender,
+        country_iso2,
+        results_notifications_enabled,
+        receive_delegate_reports,
+        dummy_account,
+        otp_required_for_login,
+        cookies_acknowledged
+    )
+values
+    (
+        6713,
+        '6713@worldcubeassociation.org',
+        '',
+        0,
+        '2017-04-03 19:13:42',
+        '2017-02-17 01:00:55',
+        '2015-11-24 19:43:41',
+        '2015-11-24 19:43:19',
+        '2017-04-03 19:13:42',
+        'Lola Rose Nelson',
+        '',
+        '1982PETR01',
+        '1489600485.jpg',
+        '1954-12-04',
+        'm',
+        'SE',
+        0,
+        0,
+        0,
+        0,
+        0
+    );
