@@ -45,41 +45,39 @@ resource "aws_batch_job_definition" "sanity_check_cron_job_definition" {
     {
       "name": "spring.profiles.active",
       "value": "prod"
-    }
-  ],
-  "secrets": [
+    },
     {
       "name": "spring.datasource.url",
-      "valueFrom": "arn:aws:secretsmanager:"
+      "value": "${data.aws_ssm_parameter.database_host.value}"
     },
     {
       "name": "spring.datasource.username",
-      "valueFrom": "arn:aws:secretsmanager:"
+      "value": "${data.aws_ssm_parameter.database_username.value}"
     },
     {
       "name": "spring.datasource.password",
-      "valueFrom": "arn:aws:secretsmanager:"
+      "value": "${data.aws_ssm_parameter.database_password.value}"
     },
     {
       "name": "Spring.mail.host",
-      "valueFrom": "arn:aws:secretsmanager:"
+      "value": "${data.aws_ssm_parameter.mail_host.value}"
     },
     {
       "name": "Spring.mail.authentication",
-      "valueFrom": "arn:aws:secretsmanager:"
+      "value": "login"
     },
     {
       "name": "spring.mail.username",
-      "valueFrom": "arn:aws:secretsmanager:"
+      "value": "${data.aws_ssm_parameter.mail_username.value}"
     },
     {
       "name": "Spring.mail.password",
-      "valueFrom": "arn:aws:secretsmanager:"
+      "value": "${data.aws_ssm_parameter.mail_password.value}"
     },
     {
       "name": "service.mail.from",
-      "valueFrom": "arn:aws:secretsmanager:"
-    }
+      "value": "${data.aws_ssm_parameter.mail_from.value}"
+    }    
   ],
   "fargatePlatformConfiguration": {
     "platformVersion": "LATEST"
