@@ -8,8 +8,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.worldcubeassociation.dbsanitycheck.bean.AnalysisBean;
 import org.worldcubeassociation.dbsanitycheck.bean.SanityCheckWithErrorBean;
-import org.worldcubeassociation.dbsanitycheck.model.SanityCheck;
 import org.worldcubeassociation.dbsanitycheck.model.Exclusion;
+import org.worldcubeassociation.dbsanitycheck.model.SanityCheck;
 import org.worldcubeassociation.dbsanitycheck.repository.SanityCheckRepository;
 import org.worldcubeassociation.dbsanitycheck.service.EmailService;
 import org.worldcubeassociation.dbsanitycheck.service.WrtSanityCheckService;
@@ -45,7 +45,6 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
 
         log.info("Reading queries");
 
-        // Read queryes
         List<SanityCheck> sanityChecks = sanityCheckRepository
                 .findAll(Sort.by(Sort.Direction.ASC, "sanityCheckCategoryId", "topic"));
         log.info("Found {} queries", sanityChecks.size());
@@ -100,7 +99,7 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
 
                 // The column count starts from 1
                 for (int i = 1; i <= columnCount; i++) {
-                    String name = rsmd.getColumnName(i);
+                    String name = rsmd.getColumnLabel(i);
 
                     if (columnsConsidered.contains(name)) {
                         throw new RuntimeException("Column " + name + " is duplicated");
@@ -145,7 +144,7 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
         List<JSONObject> remains = result.stream().filter(it -> !compareExistingKeys(it, exclusions))
                 .collect(Collectors.toList());
 
-        if (exclusions.size() > result.size()){
+        if (exclusions.size() > result.size()) {
             log.info("You have more exclusions than results, check the exclusions.");
         }
 

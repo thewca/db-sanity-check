@@ -50,6 +50,8 @@ Tests use docker database to simulate the whole process.
 
 `./gradlew test`
 
+_Note_: If you are running on Mac M1, maybe you will have issues starting docker. To try to fix it, you may add `platform: linux/x86_64` to the service `wca-test-db` in the file `docker-compose-test.yml`.
+
 ## Project details
 
 This project uses [Gradle](https://gradle.org/) as the build system. It was built using [Spring Boot](https://spring.io/projects/spring-boot), an awesome framework also for building batches/jobs.

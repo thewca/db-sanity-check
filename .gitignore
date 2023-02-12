@@ -42,3 +42,4 @@ wca-developer-database-dump*
 log/
 
 iac/.terraform/
+*.DS_Store
