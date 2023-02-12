@@ -15,6 +15,8 @@ IAC for sanity check. It is compatible with AWS.
 cd iac
 ```
 
+- Replace the bucket name in the file `iac/main.tf`. You can find the state bucket [here](https://s3.console.aws.amazon.com/s3/buckets?region=us-west-2).
+
 - Init terraform
 
 ```bash
