@@ -143,8 +143,9 @@ public class EmailServiceImpl implements EmailService {
             sb.append("  <tbody>\n");
             for (JSONObject item : analysis.getAnalysis()) {
                 sb.append("   <tr>\n");
-                for (int j = 0; j < headers.size(); j++) {
-                    sb.append("    <td style=\"border: 1px solid black;\">").append(item.get(headers.get(j)))
+                for (String header : headers) {
+                    sb.append("    <td style=\"border: 1px solid black;\">")
+                            .append(item.has(header) ? item.get(header) : "-")
                             .append("</td>\n");
                 }
                 sb.append("   </tr>\n");
