@@ -29,9 +29,6 @@ public class EmailServiceImpl implements EmailService {
     @Value("${service.mail.send}")
     private boolean sendMail;
 
-    @Value("${service.mail.to}")
-    private String mailTo;
-
     @Value("${service.mail.from}")
     private String mailFrom;
 
@@ -50,7 +47,8 @@ public class EmailServiceImpl implements EmailService {
     private static final boolean MULTIPART = true;
 
     @Override
-    public void sendEmail(List<AnalysisBean> analysisResult, List<SanityCheckWithErrorBean> queriesWithError)
+    public void sendEmail(String emailTo, List<AnalysisBean> analysisResult,
+                          List<SanityCheckWithErrorBean> queriesWithError)
             throws MessagingException {
         if (sendMail) {
             log.info("Sending email with the analysis");
@@ -60,13 +58,13 @@ public class EmailServiceImpl implements EmailService {
             MimeMessageHelper helper = new MimeMessageHelper(message, MULTIPART);
 
             helper.setFrom(mailFrom);
-            handleRecipients(helper);
+            handleRecipients(emailTo, helper);
             LocalDate currentDate = LocalDate.now();
             String formattedSubject = subject + " - " + currentDate.getMonth() + " " + currentDate.getYear();
             helper.setSubject(formattedSubject);
 
             log.info("Mail from: " + mailFrom);
-            log.info("Mail to: " + mailTo);
+            log.info("Mail to: " + emailTo);
             log.info("Subject: " + formattedSubject);
 
             boolean html = true;
@@ -92,7 +90,7 @@ public class EmailServiceImpl implements EmailService {
 
     }
 
-    private void handleRecipients(MimeMessageHelper helper) throws MessagingException {
+    private void handleRecipients(String mailTo, MimeMessageHelper helper) throws MessagingException {
         var mailSplit = List.of(mailTo.split(","));
         helper.setTo(InternetAddress.parse(mailTo));
         helper.setReplyTo(mailSplit.get(0));

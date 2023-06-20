@@ -67,7 +67,7 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
 
         log.info("All queries executed");
 
-        emailService.sendEmail(analysisResult, queriesWithError);
+        emailService.sendEmail(email, analysisResult, queriesWithError);
 
         log.info("Sanity check finished");
     }
