@@ -1,10 +1,10 @@
 -- Create categories
 insert into
-    sanity_check_categories (id, name)
+    sanity_check_categories (id, name, email_to)
 values
-    (1, 'Person Data Irregularities'),
-    (2, 'Irregular Results'),
-    (3, 'User Data Irregularities');
+    (1, 'Person Data Irregularities', 'test1@email.com'),
+    (2, 'Irregular Results', 'test1@email.com'),
+    (3, 'User Data Irregularities', 'test2@email.com');
 
 -- Insert sanity check
 insert into
