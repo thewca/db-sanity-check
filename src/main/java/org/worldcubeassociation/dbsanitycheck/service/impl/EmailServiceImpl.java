@@ -5,7 +5,6 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -15,7 +14,6 @@ import org.worldcubeassociation.dbsanitycheck.model.SanityCheck;
 import org.worldcubeassociation.dbsanitycheck.service.EmailService;
 import org.worldcubeassociation.dbsanitycheck.service.ExclusionService;
 
-import java.io.File;
 import java.time.LocalDate;
 import java.util.List;
 import javax.mail.MessagingException;
@@ -34,9 +32,6 @@ public class EmailServiceImpl implements EmailService {
 
     @Value("${service.mail.subject}")
     private String subject;
-
-    @Value("${service.mail.logfilepath}")
-    private String logFilePath;
 
     @Autowired
     private JavaMailSender emailSender;
@@ -69,10 +64,6 @@ public class EmailServiceImpl implements EmailService {
 
             boolean html = true;
             helper.setText(getText(analysisResult, queriesWithError), html);
-
-            log.info("Attach log file");
-            FileSystemResource file = new FileSystemResource(new File(logFilePath));
-            helper.addAttachment("db-sanity-check.txt", file);
 
             ByteArrayResource exclusionSuggestion =
                     exclusionService.buildExclusionSuggestionFile(analysisResult);
