@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.mail.MessagingException;
 
@@ -47,7 +48,7 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
         log.info("Found {} queries", sanityChecks.size());
 
         Map<String, List<SanityCheck>> sanityChecksByEmail = sanityChecks.stream()
-                .collect(Collectors.groupingBy(s -> s.getCategory().getEmailTo()));
+                .collect(Collectors.groupingBy(s -> Optional.ofNullable(s.getCategory().getEmailTo()).orElse("")));
         log.info("Found {} emails", sanityChecksByEmail.size());
 
         for (Map.Entry<String, List<SanityCheck>> entry : sanityChecksByEmail.entrySet()) {

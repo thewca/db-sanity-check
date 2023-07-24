@@ -45,7 +45,7 @@ public class EmailServiceImpl implements EmailService {
     public void sendEmail(String emailTo, List<AnalysisBean> analysisResult,
                           List<SanityCheckWithErrorBean> queriesWithError)
             throws MessagingException {
-        if (sendMail) {
+        if (sendMail && emailTo.length() > 0) {
             log.info("Sending email with the analysis");
 
             MimeMessage message = emailSender.createMimeMessage();
