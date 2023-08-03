@@ -9,12 +9,14 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static org.worldcubeassociation.dbsanitycheck.config.ConstantsConfig.EMAIL_TRUNCATION_LIMIT;
+
 @Service
 public class ExclusionServiceImpl implements ExclusionService {
     @Override
     public ByteArrayResource buildExclusionSuggestionFile(List<AnalysisBean> analysisResult) {
         String textFile = "";
-        for (int i = 0; i < analysisResult.size(); i++) {
+        for (int i = 0; i < analysisResult.size() && i < EMAIL_TRUNCATION_LIMIT; i++) {
             textFile += analysisToInsert(analysisResult.get(i), i) + "\n\n\n";
         }
         return new ByteArrayResource(textFile.getBytes(StandardCharsets.UTF_8));
@@ -28,7 +30,7 @@ public class ExclusionServiceImpl implements ExclusionService {
                         analysis.getSanityCheck().getTopic());
 
         // Empty comment so WRT can easily remember to change this
-        String suggestion = analysis.getAnalysis().stream().map(it -> String
+        String suggestion = analysis.getAnalysis().stream().limit(EMAIL_TRUNCATION_LIMIT).map(it -> String
                 .format("INSERT INTO sanity_check_exclusions (sanity_check_id, exclusion, comments) values (%s, '%s',"
                                 + " %s);",
                         sanityCheckId, it.toString().replaceAll("'", "\\\\'"), "''")).collect(Collectors.joining("\n"));

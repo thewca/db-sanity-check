@@ -88,11 +88,11 @@ resource "aws_batch_job_definition" "sanity_check_cron_job_definition" {
   "resourceRequirements": [
     {
       "type": "VCPU",
-      "value": "1"
+      "value": "2"
     },
     {
       "type": "MEMORY",
-      "value": "2048"
+      "value": "4096"
     }
   ],
   "executionRoleArn": "${aws_iam_role.sanity_check_execution_role.arn}"
@@ -131,7 +131,7 @@ resource "aws_batch_compute_environment" "sanity_check_cron_compute_environment"
   service_role             = aws_iam_role.sanity_check_cron_service_role.arn
 
   compute_resources {
-    max_vcpus = 1
+    max_vcpus = 2
 
     security_group_ids = [
       aws_security_group.sanity_check_sg.id

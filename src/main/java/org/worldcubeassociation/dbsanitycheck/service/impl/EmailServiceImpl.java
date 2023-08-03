@@ -1,7 +1,6 @@
 package org.worldcubeassociation.dbsanitycheck.service.impl;
 
 import lombok.extern.slf4j.Slf4j;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
@@ -21,6 +20,8 @@ import java.util.List;
 import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
+
+import static org.worldcubeassociation.dbsanitycheck.config.ConstantsConfig.EMAIL_TRUNCATION_LIMIT;
 
 @Slf4j
 @Service
@@ -125,7 +126,7 @@ public class EmailServiceImpl implements EmailService {
             return;
         }
 
-        for (int i = 0; i < analysisResult.size(); i++) {
+        for (int i = 0; i < analysisResult.size() && i < EMAIL_TRUNCATION_LIMIT; i++) {
             AnalysisBean analysis = analysisResult.get(i);
             sb.append(String.format("<h3>%s. [%s] %s</h3>%n", i + 1,
                     analysis.getSanityCheck().getCategory().getName(),
@@ -141,7 +142,8 @@ public class EmailServiceImpl implements EmailService {
             sb.append("\n   </tr>\n");
             sb.append("  </thead>\n");
             sb.append("  <tbody>\n");
-            for (JSONObject item : analysis.getAnalysis()) {
+            for (int j = 0; j < analysis.getAnalysis().size() && j < EMAIL_TRUNCATION_LIMIT; j++) {
+                var item = analysis.getAnalysis().get(j);
                 sb.append("   <tr>\n");
                 for (String header : headers) {
                     sb.append("    <td style=\"border: 1px solid black;\">")
@@ -150,10 +152,20 @@ public class EmailServiceImpl implements EmailService {
                 }
                 sb.append("   </tr>\n");
             }
+            if (analysis.getAnalysis().size() > EMAIL_TRUNCATION_LIMIT) {
+                sb.append(String.format("   <tr><td colspan=\"%s\" style=\"border: 1px solid black;\">%s other results "
+                                + "truncated</td></tr>", headers.size(),
+                        analysis.getAnalysis().size() - EMAIL_TRUNCATION_LIMIT));
+            }
             sb.append("  </tbody>\n");
             sb.append(" </table>\n");
             sb.append("</div>\n");
             sb.append("<br>\n\n");
+        }
+        if (analysisResult.size() > EMAIL_TRUNCATION_LIMIT) {
+            sb.append(
+                    String.format("<h4>%s other queries truncated</h4>", analysisResult.size() - EMAIL_TRUNCATION_LIMIT)
+            );
         }
     }
 
@@ -174,7 +186,5 @@ public class EmailServiceImpl implements EmailService {
             sb.append(String.format("<p><b>Reason:</b> %s</p>\n", queryWithErrorBean.getError()));
             sb.append("<br>\n\n");
         }
-
     }
-
 }
