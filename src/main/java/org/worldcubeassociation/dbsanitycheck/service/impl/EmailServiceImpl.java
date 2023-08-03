@@ -21,6 +21,8 @@ import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
+import static org.worldcubeassociation.dbsanitycheck.config.ConstantsConfig.EMAIL_TRUNCATION_LIMIT;
+
 @Slf4j
 @Service
 public class EmailServiceImpl implements EmailService {
@@ -47,7 +49,6 @@ public class EmailServiceImpl implements EmailService {
     private ExclusionService exclusionService;
 
     private static final boolean MULTIPART = true;
-    private static final int EMAIL_TRUNCATION_LIMIT = 50;
 
     @Override
     public void sendEmail(List<AnalysisBean> analysisResult, List<SanityCheckWithErrorBean> queriesWithError)
