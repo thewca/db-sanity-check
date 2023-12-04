@@ -36,7 +36,9 @@ It will ask you to run in sudo mode in order to execute the sql.
 
 ## How to run it
 
-- `./gradlew bootRun`
+- IDE: Most recent IDEs can run gradle, use its capabilities.
+
+- Command line: `./gradlew bootRun`
 
 ## Tests
 

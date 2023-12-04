@@ -17,13 +17,15 @@ import org.worldcubeassociation.dbsanitycheck.integration.AbstractTest;
 import org.worldcubeassociation.dbsanitycheck.service.WrtSanityCheckService;
 import org.worldcubeassociation.dbsanitycheck.util.EmailUtil;
 
+import java.io.IOException;
+import java.util.List;
 import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.internet.MimeMessage;
-import java.io.IOException;
-import java.util.List;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @Slf4j
 @SpringBootTest
@@ -52,13 +54,15 @@ public class WrtSanityCheckServiceTest extends AbstractTest {
     public void regularWorkflow() throws MessagingException, IOException {
         wrtSanityCheckService.execute();
 
+        // 2 emails are sent, I'm not sure how to get all of them in the test. Ideally, we would get each one and
+        // validate individually
         String result = getEmailResult();
-
         validateHtmlResponse(result);
     }
 
     private String getEmailResult() throws MessagingException, IOException {
-        verify(emailSender, times(1)).send(messageCaptor.capture());
+        // There are 2 different emails sent as mail_to in the categories table
+        verify(emailSender, times(2)).send(messageCaptor.capture());
 
         List<MimeMessage> messages = messageCaptor.getAllValues();
 

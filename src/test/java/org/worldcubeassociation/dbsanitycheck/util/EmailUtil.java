@@ -1,12 +1,12 @@
 package org.worldcubeassociation.dbsanitycheck.util;
 
+import java.io.IOException;
+import java.util.List;
 import javax.mail.BodyPart;
 import javax.mail.MessagingException;
 import javax.mail.internet.ContentType;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
-import java.io.IOException;
-import java.util.List;
 
 public final class EmailUtil {
     private EmailUtil() {
@@ -45,8 +45,7 @@ public final class EmailUtil {
         } else if (bodyPart.isMimeType("text/plain")) {
             result = (String) bodyPart.getContent();
         } else if (bodyPart.isMimeType("text/html")) {
-            String html = (String) bodyPart.getContent();
-            result = html;
+            result = (String) bodyPart.getContent();
         }
         return result;
     }

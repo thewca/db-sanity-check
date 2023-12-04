@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -14,7 +13,6 @@ import org.worldcubeassociation.dbsanitycheck.model.SanityCheck;
 import org.worldcubeassociation.dbsanitycheck.service.EmailService;
 import org.worldcubeassociation.dbsanitycheck.service.ExclusionService;
 
-import java.io.File;
 import java.time.LocalDate;
 import java.util.List;
 import javax.mail.MessagingException;
@@ -30,17 +28,11 @@ public class EmailServiceImpl implements EmailService {
     @Value("${service.mail.send}")
     private boolean sendMail;
 
-    @Value("${service.mail.to}")
-    private String mailTo;
-
     @Value("${service.mail.from}")
     private String mailFrom;
 
     @Value("${service.mail.subject}")
     private String subject;
-
-    @Value("${service.mail.logfilepath}")
-    private String logFilePath;
 
     @Autowired
     private JavaMailSender emailSender;
@@ -51,9 +43,10 @@ public class EmailServiceImpl implements EmailService {
     private static final boolean MULTIPART = true;
 
     @Override
-    public void sendEmail(List<AnalysisBean> analysisResult, List<SanityCheckWithErrorBean> queriesWithError)
+    public void sendEmail(String emailTo, List<AnalysisBean> analysisResult,
+                          List<SanityCheckWithErrorBean> queriesWithError)
             throws MessagingException {
-        if (sendMail) {
+        if (sendMail && emailTo.length() > 0) {
             log.info("Sending email with the analysis");
 
             MimeMessage message = emailSender.createMimeMessage();
@@ -61,21 +54,17 @@ public class EmailServiceImpl implements EmailService {
             MimeMessageHelper helper = new MimeMessageHelper(message, MULTIPART);
 
             helper.setFrom(mailFrom);
-            handleRecipients(helper);
+            handleRecipients(emailTo, helper);
             LocalDate currentDate = LocalDate.now();
             String formattedSubject = subject + " - " + currentDate.getMonth() + " " + currentDate.getYear();
             helper.setSubject(formattedSubject);
 
             log.info("Mail from: " + mailFrom);
-            log.info("Mail to: " + mailTo);
+            log.info("Mail to: " + emailTo);
             log.info("Subject: " + formattedSubject);
 
             boolean html = true;
             helper.setText(getText(analysisResult, queriesWithError), html);
-
-            log.info("Attach log file");
-            FileSystemResource file = new FileSystemResource(new File(logFilePath));
-            helper.addAttachment("db-sanity-check.txt", file);
 
             ByteArrayResource exclusionSuggestion =
                     exclusionService.buildExclusionSuggestionFile(analysisResult);
@@ -93,7 +82,7 @@ public class EmailServiceImpl implements EmailService {
 
     }
 
-    private void handleRecipients(MimeMessageHelper helper) throws MessagingException {
+    private void handleRecipients(String mailTo, MimeMessageHelper helper) throws MessagingException {
         var mailSplit = List.of(mailTo.split(","));
         helper.setTo(InternetAddress.parse(mailTo));
         helper.setReplyTo(mailSplit.get(0));

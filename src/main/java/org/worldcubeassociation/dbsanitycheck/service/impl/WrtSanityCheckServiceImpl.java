@@ -18,6 +18,8 @@ import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.mail.MessagingException;
 
@@ -34,10 +36,6 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
     @Autowired
     private SanityCheckRepository sanityCheckRepository;
 
-    // Hold inconsistencies
-    private List<AnalysisBean> analysisResult = new ArrayList<>();
-
-    private List<SanityCheckWithErrorBean> queriesWithError = new ArrayList<>();
 
     @Override
     public void execute() throws MessagingException {
@@ -49,17 +47,34 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
                 .findAll(Sort.by(Sort.Direction.ASC, "sanityCheckCategoryId", "topic"));
         log.info("Found {} queries", sanityChecks.size());
 
-        executeSanityChecks(sanityChecks);
-        showResults();
+        Map<String, List<SanityCheck>> sanityChecksByEmail = sanityChecks.stream()
+                .collect(Collectors.groupingBy(s -> Optional.ofNullable(s.getCategory().getEmailTo()).orElse("")));
+        log.info("Found {} emails", sanityChecksByEmail.size());
+
+        for (Map.Entry<String, List<SanityCheck>> entry : sanityChecksByEmail.entrySet()) {
+            sendSanityChecksToEmail(entry.getKey(), entry.getValue());
+        }
+    }
+
+    private void sendSanityChecksToEmail(String email, List<SanityCheck> sanityChecks) throws MessagingException {
+
+        // Hold inconsistencies
+        List<AnalysisBean> analysisResult = new ArrayList<>();
+
+        List<SanityCheckWithErrorBean> queriesWithError = new ArrayList<>();
+
+        executeSanityChecks(sanityChecks, analysisResult, queriesWithError);
+        showResults(analysisResult, queriesWithError);
 
         log.info("All queries executed");
 
-        emailService.sendEmail(analysisResult, queriesWithError);
+        emailService.sendEmail(email, analysisResult, queriesWithError);
 
         log.info("Sanity check finished");
     }
 
-    private void executeSanityChecks(List<SanityCheck> sanityChecks) {
+    private void executeSanityChecks(List<SanityCheck> sanityChecks, List<AnalysisBean> analysisResult,
+                                     List<SanityCheckWithErrorBean> queriesWithError) {
         log.info("Execute queries");
 
         String prevCategory = null;
@@ -72,14 +87,15 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
                 prevCategory = category;
             }
 
-            generalAnalysis(sanityCheck);
+            generalAnalysis(sanityCheck, analysisResult, queriesWithError);
         }
     }
 
     /**
      * A general purpose analysis. If the query returns any value, it will be added to the result
      */
-    private void generalAnalysis(SanityCheck sanityCheck) {
+    private void generalAnalysis(SanityCheck sanityCheck, List<AnalysisBean> analysisResult,
+                                 List<SanityCheckWithErrorBean> queriesWithError) {
         String topic = sanityCheck.getTopic();
         String query = sanityCheck.getQuery();
 
@@ -194,7 +210,7 @@ public class WrtSanityCheckServiceImpl implements WrtSanityCheckService {
     }
 
 
-    private void showResults() {
+    private void showResults(List<AnalysisBean> analysisResult, List<SanityCheckWithErrorBean> queriesWithError) {
         analysisResult.forEach(item -> {
             log.warn(" ** Inconsistency at [{}] {}", item.getSanityCheck().getCategory().getName(),
                     item.getSanityCheck().getTopic());
