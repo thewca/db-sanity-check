@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    username: root
+    url: jdbc:mysql://localhost:8306/wca_development
+    driverClassName: com.mysql.cj.jdbc.Driver
+    password: ''
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
+
+service:
+  mail:
+    send: 'true'
+    from: email@wca.com
+    subject: Sanity Check
+    cc: wst@wca.org, wst-north@wca.org, wst-east@wca.org

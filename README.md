@@ -19,7 +19,7 @@ ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '';
 create database wca_development;
 ```
 
-The database `wca_development` will be populated with WCA data. If you want to change password, username or others, make sure to also change on `application-local.properties`.
+The database `wca_development` will be populated with WCA data. If you want to change password, username or others, make sure to also change on `application-local.yml`.
 
 ## Before you run this
 

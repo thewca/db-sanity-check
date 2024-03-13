@@ -30,7 +30,7 @@ import static org.mockito.Mockito.when;
 @Slf4j
 @SpringBootTest
 @ActiveProfiles("test")
-@TestPropertySource(locations = "classpath:application-test.properties")
+@TestPropertySource(locations = "classpath:application-test.yml")
 public class WrtSanityCheckServiceTest extends AbstractTest {
 
     @Autowired
@@ -43,7 +43,7 @@ public class WrtSanityCheckServiceTest extends AbstractTest {
     private ArgumentCaptor<MimeMessage> messageCaptor;
 
     @BeforeEach
-    private void setup() {
+    public void setup() {
         MimeMessage mimeMessage = new MimeMessage((Session) null);
         when(emailSender.createMimeMessage()).thenReturn(mimeMessage);
     }
