@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    driverClassName: com.mysql.cj.jdbc.Driver
+    password: ''
+    username: root
+    url: jdbc:mysql://localhost:3306/wca_development
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
+  mail:
+    host: ${mail.host}
+    username: ${mail.username}
+    port: '587'
+    properties:
+      mail:
+        smtp:
+          starttls:
+            enable: 'true'
+          auth: 'true'
+    password: ${mail.password}
+
+service:
+  mail:
+    send: 'false'
+    from: ${mail.from}
+    subject: Sanity Check

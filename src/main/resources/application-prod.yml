@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    driverClassName: com.mysql.cj.jdbc.Driver
+    password: ${connectopm.dbwca}
+    username: ${user.dbwca}
+    url: ${connectopm.dbwca}
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
+  mail:
+    host: ${mail.host}
+    username: ${mail.username}
+    port: '587'
+    properties:
+      mail:
+        smtp:
+          starttls:
+            enable: 'true'
+          auth: 'true'
+    password: ${mail.password}
+
+service:
+  mail:
+    send: 'true'
+    from: ${mail.from}
+    subject: Sanity Check
+    cc: wst@worldcubeassociation.org

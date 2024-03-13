@@ -3,6 +3,7 @@ package org.worldcubeassociation.dbsanitycheck.service.impl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -34,6 +35,9 @@ public class EmailServiceImpl implements EmailService {
     @Value("${service.mail.subject}")
     private String subject;
 
+    @Value("${service.mail.cc}")
+    private String[] cc;
+
     @Autowired
     private JavaMailSender emailSender;
 
@@ -46,7 +50,7 @@ public class EmailServiceImpl implements EmailService {
     public void sendEmail(String emailTo, List<AnalysisBean> analysisResult,
                           List<SanityCheckWithErrorBean> queriesWithError)
             throws MessagingException {
-        if (sendMail && emailTo.length() > 0) {
+        if (sendMail && emailTo != null && !emailTo.isEmpty()) {
             log.info("Sending email with the analysis");
 
             MimeMessage message = emailSender.createMimeMessage();
@@ -86,10 +90,7 @@ public class EmailServiceImpl implements EmailService {
         var mailSplit = List.of(mailTo.split(","));
         helper.setTo(InternetAddress.parse(mailTo));
         helper.setReplyTo(mailSplit.get(0));
-        if (mailSplit.size() > 1) {
-            helper.setCc(InternetAddress.parse(
-                    String.join(",", mailSplit.subList(1, mailSplit.size()))));
-        }
+        helper.setCc(cc);
     }
 
     private String getText(List<AnalysisBean> analysisResult, List<SanityCheckWithErrorBean> queriesWithError) {

@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: WCA Sanity Check
+  profiles:
+    active: local # Default profile
